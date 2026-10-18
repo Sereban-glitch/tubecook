@@ -1,0 +1,84 @@
+{
+  "id": "ep05_vela_incident",
+  "episode": 5,
+  "series": "Рассекреченные архивы: Сезон 1",
+  "title": "Инцидент Вела: Тайна двойной ядерной вспышки в Атлантике",
+  "target_duration_s": 46,
+  "hook": "22 сентября 1979 года американский спутник зафиксировал двойную ядерную вспышку над океаном!",
+  "script": "Ночью 22 сентября 1979 года спутник слежения «Вела 6911» засёк в районе островов Принс-Эдуард в Южной Атлантике характерный двойной световой импульс — безошибочную сигнатуру ядерного взрыва мощностью до трёх килотонн. Событие вызвало панику в Белом доме: ни одна ядерная держава не признала испытание. Созданная комиссия профессора Руины поспешила заявить, что это было столкновение микрометеорита со спутником. Однако замеры гидроакустических станций и следы радиации в щитовидке австралийских овец говорили об обратном. Кто нажал на кнопку: ЮАР, Израиль или обе страны вместе?",
+  "voice": "ru-RU-DmitryNeural",
+  "bgm_gain_db": -22,
+  "historical_metadata": {
+    "operation_name": "The Vela Incident (South Atlantic Flash)",
+    "agency": "White House Office of Science & Technology / US Air Force Technical Applications Center (AFTAC)",
+    "year_initiated": 1979,
+    "year_declassified": 2018,
+    "declassification_authority": "National Security Archive FOIA declassification",
+    "key_figures": "Dr. Jack Ruina (Ruina Panel), Jimmy Carter",
+    "primary_source_doc": "Ad Hoc Panel Report on the September 22 Event (The Ruina Report, 1980)"
+  },
+  "scenes": [
+    {
+      "index": 0,
+      "duration_s": 4.0,
+      "source_query": "Satellite in space Earth orbit Vela satellite 1970s",
+      "overlay_text": "22 СЕНТЯБРЯ 1979 // СПУТНИК VELA 6911",
+      "narration_segment": "Ночью 22 сентября 1979 года спутник засёк характерный двойной световой импульс."
+    },
+    {
+      "index": 1,
+      "duration_s": 8.0,
+      "source_query": "Nuclear explosion flash ocean sea night horizon atomic",
+      "overlay_text": "СИГНАТУРА ЯДЕРНОГО ВЗРЫВА // 3 КИЛОТОННЫ",
+      "narration_segment": "Безошибочную сигнатуру тайного ядерного взрыва мощностью до трёх килотонн."
+    },
+    {
+      "index": 2,
+      "duration_s": 9.0,
+      "source_query": "White House situation room Jimmy Carter meeting 1979",
+      "overlay_text": "ПАНИКА В БЕЛОМ ДОМЕ // КОМИССИЯ РУИНЫ",
+      "narration_segment": "Событие вызвало панику в Белом доме: комиссия профессора Руины поспешила заявить про столкновение с микрометеоритом."
+    },
+    {
+      "index": 3,
+      "duration_s": 9.0,
+      "source_query": "Sonar hydrophone underwater acoustics ocean listening station",
+      "overlay_text": "ГИДРОАКУСТИКА И РАДИАЦИЯ В АВСТРАЛИИ",
+      "narration_segment": "Однако замеры гидроакустики и радиация в щитовидке австралийских овец говорили об обратном."
+    },
+    {
+      "index": 4,
+      "duration_s": 9.0,
+      "source_query": "Prince Edward Islands map South Atlantic Indian ocean",
+      "overlay_text": "ЮАР ИЛИ ИЗРАИЛЬ? // ТАЙНЫЙ ПОЛИГОН",
+      "narration_segment": "Ни одна страна мира не взяла на себя ответственность за взрыв у островов Принс-Эдуард."
+    },
+    {
+      "index": 5,
+      "duration_s": 7.0,
+      "source_query": "Nuclear mushroom cloud dark ocean mystery question",
+      "overlay_text": "КТО СТОЯЛ ЗА ВЗРЫВОМ?",
+      "narration_segment": "Кто нажал на кнопку: ЮАР, Израиль или обе страны вместе?"
+    }
+  ],
+  "telegram_post": {
+    "title": "Инцидент Вела: Загадочный ядерный взрыв 1979 года",
+    "lead": "В ночь на 22 сентября 1979 года американский спутник зафиксировал двойную вспышку над океаном, которую Белый дом попытался объявить микрометеоритом.",
+    "declassified_facts": [
+      "Спутник Vela 6911 имел датчики bhangmeter, специально откалиброванные для фиксации двойного светового импульса ядерного взрыва.",
+      "Сенсоры Naval Research Laboratory в Пуэрто-Рико также зафиксировали возмущение ионосферы в ту же минуту.",
+      "Официальный отчет комиссии Джека Руины объявил вспышку отражением света от отколовшейся частицы спутника.",
+      "В 2018 году рассекреченные дневники президента Джимми Картера подтвердили: в Белом доме были уверены, что это испытание ЮАР и Израиля."
+    ],
+    "cta_question": "Чьё ядерное испытание зафиксировал спутник на самом деле?",
+    "poll": {
+      "question": "Кто стоял за ядерным испытанием в Инциденте Вела?",
+      "options": [
+        "Израиль (испытание нейтронной бомбы)",
+        "ЮАР (программа ядерного оружия апартеида)",
+        "Совместные секретные испытания ЮАР и Израиля",
+        "Случайный технический сбой датчиков"
+      ]
+    }
+  }
+}

@@ -1,0 +1,38 @@
+# Secrets & environment
+.env
+*.env
+client_secret*.json
+token.json
+*.pem
+*.key
+*.token
+
+# Python & virtual environments
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Binaries & compiled artifacts
+tubecook
+*.exe
+*.o
+*.a
+*.so
+
+# Build & temporary files
+build/
+bench/
+*.log
+*.tmp
+.DS_Store
+
+# Media artifacts (ignore rendered video/audio, but keep bundled BGM loop)
+*.mp4
+*.wav
+*.m4a
+*.ass
+*.mp3
+!assets/bgm/soft_loop.mp3

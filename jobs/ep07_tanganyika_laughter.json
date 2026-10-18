@@ -1,0 +1,84 @@
+{
+  "id": "ep07_tanganyika_laughter",
+  "episode": 7,
+  "series": "Рассеクレченные архивы: Сезон 1",
+  "title": "Эпидемия смеха в Танганьике: Массовый психоз, закрывший 14 школ",
+  "target_duration_s": 45,
+  "hook": "В 1962 году смех трёх школьниц закрыл четырнадцать школ и вызвал массовый психоз!",
+  "script": "30 января 1962 года в женской школе-интернате в деревне Кашаша три девочки начали непрерывно смеяться. Смех перерос в истерику, слёзы и панику, охватив почти сотню учениц. Школу закрыли, детей отправили по домам, но эпидемия перекинулась на соседние деревни. За полгода смехом заразились более тысячи человек, а властям пришлось закрыть четырнадцать учебных заведений. Врачи не нашли ни токсинов, ни вирусов. Официальный вердикт науки — массовое психогенное расстройство, вызванное колоссальным стрессом молодёжи на фоне обретения независимости. Или это был неизвестный социальный вирус?",
+  "voice": "ru-RU-DmitryNeural",
+  "bgm_gain_db": -22,
+  "historical_metadata": {
+    "operation_name": "The Tanganyika Laughter Epidemic",
+    "agency": "Tanganyika Ministry of Health / British Medical Journal Investigation",
+    "year_initiated": 1962,
+    "year_declassified": 1963,
+    "declassification_authority": "Medical Case Studies (Rankin & Philip, Central African Journal of Medicine)",
+    "key_figures": "Dr. A.M. Rankin, Dr. P.J. Philip",
+    "primary_source_doc": "Rankin & Philip, 'An Epidemic of Laughing in the Bukoba District of Tanganyika' (1963)"
+  },
+  "scenes": [
+    {
+      "index": 0,
+      "duration_s": 4.0,
+      "source_query": "Mission school Africa vintage classroom 1960s pupils",
+      "overlay_text": "30 ЯНВАРЯ 1962 // ДЕРЕВНЯ КАШАША",
+      "narration_segment": "30 января 1962 года в женской школе-интернате три девочки начали непрерывно смеяться."
+    },
+    {
+      "index": 1,
+      "duration_s": 8.0,
+      "source_query": "Hysterical laughter crying emotion vintage portrait girls",
+      "overlay_text": "СМЕХ ПЕРЕХОДЯЩИЙ В ПАНИКУ // 95 УЧЕНИЦ",
+      "narration_segment": "Смех перерос в истерику, слёзы и панику, охватив почти сотню учениц."
+    },
+    {
+      "index": 2,
+      "duration_s": 9.0,
+      "source_query": "Abandoned African school empty desks closed gate 1960s",
+      "overlay_text": "ЗАКРЫТО 14 ШКОЛ // 1000+ ЗАРАЖЕННЫХ",
+      "narration_segment": "Школу закрыли, но эпидемия перекинулась дальше: властям пришлось закрыть 14 учебных заведений."
+    },
+    {
+      "index": 3,
+      "duration_s": 9.0,
+      "source_query": "Medical doctors examining patient hospital laboratory 1960s",
+      "overlay_text": "НИ ТОКСИНОВ, НИ ВИРУСОВ // АНОМАЛИЯ",
+      "narration_segment": "Врачи не нашли ни следов яда, ни инфекций во взятых пробах."
+    },
+    {
+      "index": 4,
+      "duration_s": 8.0,
+      "source_query": "Crowd stress psychological tension black and white archive",
+      "overlay_text": "МАССОВОЕ ПСИХОГЕННОЕ РАССТРОЙСТВО",
+      "narration_segment": "Наука объяснила это массовым психозом из-за стресса в момент слома эпох."
+    },
+    {
+      "index": 5,
+      "duration_s": 7.0,
+      "source_query": "Brain neural network psychological contagion abstract dark",
+      "overlay_text": "МОЖЕТ ЛИ ЭТО ПОВТОРИТЬСЯ?",
+      "narration_segment": "Или это был неизвестный социальный вирус?"
+    }
+  ],
+  "telegram_post": {
+    "title": "Эпидемия смеха в Танганьике: Загадка массового психоза 1962 года",
+    "lead": "Вспышка неконтролируемого истерического смеха парализовала целый регион в Восточной Африке на 6 месяцев.",
+    "declassified_facts": [
+      "Приступы смеха и слез продолжались у пострадавших от нескольких часов до 16 дней подряд.",
+      "Ни один взрослый или учитель не заразился — феномен поражал исключительно детей и подростков от 12 до 18 лет.",
+      "Деревня Кашаша и соседние поселки были изолированы полицией, чтобы остановить распространение паники.",
+      "Современные эпидемиологи классифицируют случай как крупнейшую документированную вспышку MPI (массового социогенного заболевания)."
+    ],
+    "cta_question": "Подвержен ли современный человек массовому психогенному заражению через соцсети?",
+    "poll": {
+      "question": "Возможен ли подобный массовый психоз в наши дни?",
+      "options": [
+        "Да, через TikTok и вирусные тренды",
+        "Нет, современная медицина сразу купирует",
+        "Уже происходит прямо сейчас",
+        "Очень странный исторический факт"
+      ]
+    }
+  }
+}

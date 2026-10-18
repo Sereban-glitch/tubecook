@@ -1,0 +1,84 @@
+{
+  "id": "ep02_acoustic_kitty",
+  "episode": 2,
+  "series": "Рассекреченные архивы: Сезон 1",
+  "title": "Проект Acoustic Kitty: 20 миллионов долларов на кота-шпиона",
+  "target_duration_s": 45,
+  "hook": "Двадцать миллионов долларов на кота-шпиона, которого в первом же задании сбило такси!",
+  "script": "В шестидесятые годы ЦРУ потратило двадцать миллионов долларов на создание идеального шпиона. В обычную кошку хирурги вживили микрофон в ушной канал, радиопередатчик у основания черепа, а тонкую антенну вплели в шерсть до самого хвоста. Проект «Акустическая кошечка» должен был подслушивать советских дипломатов в парке Вашингтона. Но во время первых же полевых испытаний выпущенное животное побежало через дорогу и мгновенно попало под колеса такси. Программу немедленно закрыли как непригодную. Документы рассекретили лишь в 2001 году. Вы верите, что на кошках всё закончилось?",
+  "voice": "ru-RU-DmitryNeural",
+  "bgm_gain_db": -22,
+  "historical_metadata": {
+    "operation_name": "Project Acoustic Kitty",
+    "agency": "CIA Directorate of Science & Technology",
+    "year_initiated": 1961,
+    "year_declassified": 2001,
+    "declassification_authority": "FOIA request by Jeffrey Richelson (National Security Archive)",
+    "key_figures": "Victor Marchetti, CIA Technical Research Directorate",
+    "primary_source_doc": "CIA Declassified Memo: Views on Trained Cats for Reconnaissance (1967)"
+  },
+  "scenes": [
+    {
+      "index": 0,
+      "duration_s": 4.0,
+      "source_query": "Cat domestic feline vintage portrait 1960s",
+      "overlay_text": "ВАШИНГТОН, 1961 // $20 МЛН НА БИО-ШПИОНА",
+      "narration_segment": "В шестидесятые годы ЦРУ потратило двадцать миллионов долларов на создание идеального шпиона."
+    },
+    {
+      "index": 1,
+      "duration_s": 8.0,
+      "source_query": "Vintage surgical tools operating room radio antenna miniature",
+      "overlay_text": "МИКРОФОН В УХЕ // АНТЕННА В ХВОСТЕ",
+      "narration_segment": "В обычную кошку хирурги вживили микрофон в ушной канал, радиопередатчик у черепа, а антенну вплели в шерсть."
+    },
+    {
+      "index": 2,
+      "duration_s": 8.0,
+      "source_query": "Soviet embassy Washington park bench spy meeting 1960s",
+      "overlay_text": "ЦЕЛЬ: СОВЕТСКИЕ ДИПЛОМАТЫ В ПАРКЕ",
+      "narration_segment": "Проект «Акустическая кошечка» должен был подслушивать советских дипломатов в парке Вашингтона."
+    },
+    {
+      "index": 3,
+      "duration_s": 9.0,
+      "source_query": "Vintage yellow cab taxi street road traffic 1960s",
+      "overlay_text": "ПЕРВЫЙ ТЕСТ // НЕПРЕДВИДЕННЫЙ ФИНАЛ",
+      "narration_segment": "Но во время первых же полевых испытаний выпущенное животное побежало через дорогу и мгновенно попало под колеса такси."
+    },
+    {
+      "index": 4,
+      "duration_s": 9.0,
+      "source_query": "CIA top secret memorandum document stamp 2001",
+      "overlay_text": "ПРОЕКТ ЗАКРЫТ // РАССЕКРЕЧЕНО В 2001",
+      "narration_segment": "Программу немедленно закрыли как непригодную. Документы рассекретили лишь в 2001 году."
+    },
+    {
+      "index": 5,
+      "duration_s": 7.0,
+      "source_query": "Cybernetic animal surveillance technology concept",
+      "overlay_text": "КТО СЛЕДУЮЩИЙ?",
+      "narration_segment": "Вы верите, что на кошках всё закончилось?"
+    }
+  ],
+  "telegram_post": {
+    "title": "Проект Acoustic Kitty: 20 миллионов долларов на кота-шпиона",
+    "lead": "В разгар Холодной войны ЦРУ попыталось превратить домашнее животное в радиоуправляемый микрофон.",
+    "declassified_facts": [
+      "Хирургическая операция на кошке длилась более часа.",
+      "Антенна представляла собой тончайший провод, проходящий сквозь шерсть вдоль позвоночника до кончика хвоста.",
+      "Проект обошелся американским налогоплательщикам почти в 20 миллионов долларов по современному курсу.",
+      "Итоговый меморандум ЦРУ 1967 года гласил: 'Кошки плохо поддаются дисциплине в условиях реального города'."
+    ],
+    "cta_question": "Используют ли спецслужбы животных и птиц для разведки сегодня?",
+    "poll": {
+      "question": "Используются ли био-киборги сегодня?",
+      "options": [
+        "Да, дроны-птицы и насекомые существуют",
+        "Нет, спутники и смартфоны заменили всё",
+        "Только в экспериментальных лабораториях DARPA",
+        "Жду следующую серию!"
+      ]
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "id": "ep08_project_iceworm",
+  "episode": 8,
+  "series": "Рассекреченные архивы: Сезон 1",
+  "title": "Проект Iceworm: Город ядерных ракет подо льдами Гренландии",
+  "target_duration_s": 47,
+  "hook": "США пробурили четыре тысячи километров туннелей во льдах Гренландии, чтобы спрятать шестьсот ядерных ракет!",
+  "script": "В 1959 году армия США построила в ледяном щите Гренландии комплекс «Кэмп Сенчури», работавший на мобильном ядерном реакторе. Миру его представили как научную станцию для полярных исследований. Но подлинной целью был сверхсекретный проект «Ледяной червь». Пентагон планировал вырезать в леднике четыре тысячи километров туннелей и разместить шестьсот ядерных ракет с прямым наведением на СССР. Проект рухнул не из-за шпионов, а из-за физики: ледник двигался быстрее расчётов, сдавливая стены и деформируя пусковые рельсы. В 1966 году базу бросили подо льдом вместе с радиоактивными отходами.",
+  "voice": "ru-RU-DmitryNeural",
+  "bgm_gain_db": -22,
+  "historical_metadata": {
+    "operation_name": "Project Iceworm / Camp Century",
+    "agency": "US Army / Department of Defense",
+    "year_initiated": 1959,
+    "year_declassified": 1997,
+    "declassification_authority": "Danish Institute of International Affairs (DUPI) historical inquiry (1997)",
+    "key_figures": "US Army Corps of Engineers, Danish Prime Minister H.C. Hansen",
+    "primary_source_doc": "Greenland During the Cold War: Danish and American Security Policy 1945–1968 (DUPI 1997)"
+  },
+  "scenes": [
+    {
+      "index": 0,
+      "duration_s": 4.0,
+      "source_query": "Camp Century Greenland ice snow military base 1960",
+      "overlay_text": "ГРЕНЛАНДИЯ, 1959 // КЭМП СЕНЧУРИ ПОДО ЛЬДОМ",
+      "narration_segment": "В 1959 году армия США построила в ледяном щите Гренландии полярную базу «Кэмп Сенчури»."
+    },
+    {
+      "index": 1,
+      "duration_s": 9.0,
+      "source_query": "Ice tunnel trench snow machine drilling Greenland military",
+      "overlay_text": "ПРОЕКТ «ICEWORM» // 4000 КМ ЛЕДЯНЫХ ТУННЕЛЕЙ",
+      "narration_segment": "Подлинной целью был проект «Ледяной червь» — сеть туннелей под ледяным щитом."
+    },
+    {
+      "index": 2,
+      "duration_s": 9.0,
+      "source_query": "Nuclear missile launcher railway tunnel subterranean Cold War",
+      "overlay_text": "600 ЯДЕРНЫХ РАКЕТ ПОД ПРИКРЫТИЕМ НАУКИ",
+      "narration_segment": "Пентагон планировал разместить там шестьсот ядерных ракет на рельсовых платформах."
+    },
+    {
+      "index": 3,
+      "duration_s": 9.0,
+      "source_query": "Mobile nuclear power plant PM-2A Camp Century military",
+      "overlay_text": "ЯДЕРНЫЙ РЕАКТОР PM-2A // ДВИЖЕНИЕ ЛЬДА",
+      "narration_segment": "База питалась от атомного реактора, но ледник двигался и сдавливал стены туннелей."
+    },
+    {
+      "index": 4,
+      "duration_s": 9.0,
+      "source_query": "Abandoned military bunker under ice Greenland melting snow",
+      "overlay_text": "БРОШЕНО В 1966 // РАДИОАКТИВНЫЙ СЛЕД",
+      "narration_segment": "В 1966 году базу спешно бросили подо льдом вместе с опасными отходами."
+    },
+    {
+      "index": 5,
+      "duration_s": 7.0,
+      "source_query": "Melting glacier Greenland climate environmental threat",
+      "overlay_text": "ЛЕДНИК ТАЕТ. ЧТО ВСПЛЫВЕТ НАРУЖУ?",
+      "narration_segment": "Теперь тающие ледники грозят вымыть эти отходы в океан."
+    }
+  ],
+  "telegram_post": {
+    "title": "Проект Iceworm: Секретный атомный город под ледником Гренландии",
+    "lead": "В разгар Холодной войны Пентагон построил подземный ядерный полигон прямо под ногами властей Дании.",
+    "declassified_facts": [
+      "Дания объявляла свою территорию безъядерной зоной, поэтому проект скрывался даже от союзников по НАТО.",
+      "Комплекс включал госпиталь, кинотеатр, жилые блоки и первый в мире мобильный реактор PM-2A.",
+      "Лед пластичен: своды туннелей проседали со скоростью до 1 метра в год, разрушая рельсовые пути ракет 'Iceman'.",
+      "При эвакуации подо льдом оставили более 200 тысяч литров дизеля и радиоактивную охлаждающую воду."
+    ],
+    "cta_question": "Как решить проблему оставленных подо льдом радиоактивных отходов?",
+    "poll": {
+      "question": "Что делать с ядерным наследием Camp Century?",
+      "options": [
+        "США обязаны провести полную дезактивацию",
+        "Оставить подо льдом — растает нескоро",
+        "Дания и США должны разделить расходы",
+        "Шокирован масштабом этого проекта"
+      ]
+    }
+  }
+}

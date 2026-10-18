@@ -1,0 +1,44 @@
+# ============================================================================
+# tubecook.service — юнит Telegram HITL-бота (agrobot-prod, systemd)
+# Установка:
+#   sudo cp tubecook.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now tubecook
+# ============================================================================
+[Unit]
+Description=Tubecook — Telegram HITL-оркестратор конвейера Shorts
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Держите бота под непривилегированным пользователем
+User=agrobot
+Group=agrobot
+WorkingDirectory=/opt/field-manual-scripts
+ExecStart=/usr/local/bin/tubecook
+Restart=on-failure
+RestartSec=10
+
+# ---- Песочница (Глава 5.6): минимум surface ----
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+# боту нужны: каталог задач (rw), рендер-цель на ноутбуке — через ssh-ключ
+ReadWritePaths=/opt/field-manual-scripts/jobs
+# env-переменные берем из /etc/tubecook.env (chmod 600, root:agrobot)
+EnvironmentFile=/etc/tubecook.env
+
+# ---- Лимиты под профиль «микросервис 15-30 МБ» ----
+MemoryMax=64M
+CPUQuota=20%
+TasksMax=16
+# сетевой доступ только к Telegram API (nftables-уровень остаётся внешним)
+IPAddressDeny=any
+IPAddressAllow=api.telegram.org
+
+[Install]
+WantedBy=multi-user.target
