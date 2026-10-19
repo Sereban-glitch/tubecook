@@ -54,13 +54,21 @@ def _classify(sent: str, idx: int, total: int, plan: list) -> str:
     if idx == total - 1:
         return "outro"
     # явный override из visual_plan: строки вида "stat: ...", "compare: ...",
-    # "quote: ..." относятся к n-й не-хук/не-аутро фразе по порядку
+    # "quote: ..." или словари вида {"kind": "stat"} относятся к n-й не-хук/не-аутро фразе по порядку
     body_i = idx - 1
     if plan and body_i < len(plan):
-        hint = str(plan[body_i]).lower()
-        for kind in ("stat", "compare", "quote", "fact"):
-            if hint.startswith(kind):
-                return kind
+        item = plan[body_i]
+        if isinstance(item, dict):
+            k = str(item.get("kind", "")).lower()
+            if k in ("hook", "outro", "stat", "compare", "quote", "fact"):
+                return k
+            if "fact" in k:
+                return "fact"
+        else:
+            hint = str(item).lower()
+            for kind in ("stat", "compare", "quote", "fact"):
+                if hint.startswith(kind):
+                    return kind
     if _COMPARE_RE.search(sent):
         return "compare"
     if sent.endswith("?"):
@@ -84,22 +92,67 @@ def _split_compare(sent: str) -> tuple:
     return a or sent, b
 
 
+def _subtoks(word_str: str) -> list[str]:
+    return [_norm(t) for t in re.findall(r"[\wа-яё]+", str(word_str).lower()) if _norm(t)]
+
+
 def align_words_to_sentences(words: list, sentences: list) -> list:
     """Каждому предложению — диапазон индексов слов [i, j) по нормализованным токенам."""
+    if not sentences:
+        return []
+    if not words:
+        return [(0, 0) for _ in sentences]
+
+    n_sents = len(sentences)
+    n_words = len(words)
+
+    sent_tokens = []
+    for s in sentences:
+        toks = [_norm(t) for t in re.findall(r"[\wа-яё]+", s.lower()) if _norm(t)]
+        sent_tokens.append(toks)
+
+    word_subtoks = [_subtoks(w.get("word", "")) for w in words]
+
+    starts = [0]
+    cur_w = 0
+    for s_idx in range(1, n_sents):
+        target_toks = sent_tokens[s_idx]
+        if not target_toks:
+            starts.append(min(cur_w, n_words))
+            continue
+
+        first_tok = target_toks[0]
+        second_tok = target_toks[1] if len(target_toks) > 1 else None
+
+        found_idx = None
+        for w_i in range(cur_w + 1, n_words):
+            sub = word_subtoks[w_i]
+            if first_tok in sub:
+                if second_tok and w_i + 1 < n_words:
+                    next_sub = word_subtoks[w_i + 1]
+                    if second_tok in sub or second_tok in next_sub:
+                        found_idx = w_i
+                        break
+                else:
+                    found_idx = w_i
+                    break
+
+        if found_idx is None:
+            rem_sents = n_sents - s_idx
+            rem_words = n_words - cur_w
+            step = max(1, rem_words // (rem_sents + 1))
+            found_idx = min(cur_w + step, n_words - rem_sents)
+
+        starts.append(found_idx)
+        cur_w = found_idx
+
     ranges = []
-    i = 0
-    for sent in sentences:
-        toks = [_norm(t) for t in sent.split() if _norm(t)]
-        # пропускаем слова, пока не найдём начало предложения
-        while i < len(words) and toks and _norm(words[i]["word"]) != toks[0]:
-            i += 1
-        start_i = i
-        j = 0
-        while i < len(words) and j < len(toks):
-            if _norm(words[i]["word"]) == toks[j]:
-                j += 1
-            i += 1
-        ranges.append((start_i, max(start_i + 1, i)))
+    for s_idx in range(n_sents):
+        a = starts[s_idx]
+        b = starts[s_idx + 1] if s_idx + 1 < n_sents else n_words
+        b = max(a + 1, b)
+        ranges.append((a, b))
+
     return ranges
 
 

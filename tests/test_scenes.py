@@ -66,3 +66,47 @@ def test_real_sample_payload():
     words = words_of(script)
     scenes = build_scenes(parsed.job, words, words[-1]["end"], out_dir="/tmp/na")
     assert len(scenes) == len(split_sentences(script))
+
+
+def test_align_words_with_compound_tts_tokens():
+    # Симуляция edge-tts, возвращающего склеенные токены вроде "280 дробь"
+    text = "Суд против Водоканала. Дело номер 280 дробь 8165 дробь 23. Решение вынесено."
+    sents = split_sentences(text)
+    words = [
+        {"word": "Суд", "start": 0.1, "end": 0.5},
+        {"word": "против", "start": 0.5, "end": 0.9},
+        {"word": "Водоканала", "start": 0.9, "end": 1.5},
+        {"word": "Дело", "start": 2.0, "end": 2.3},
+        {"word": "номер", "start": 2.3, "end": 2.6},
+        {"word": "280 дробь", "start": 2.6, "end": 3.4},
+        {"word": "8165 дробь", "start": 3.4, "end": 4.2},
+        {"word": "23", "start": 4.2, "end": 4.7},
+        {"word": "Решение", "start": 5.2, "end": 5.8},
+        {"word": "вынесено", "start": 5.8, "end": 6.4},
+    ]
+    ranges = align_words_to_sentences(words, sents)
+    assert len(ranges) == 3
+    assert ranges[0] == (0, 3)
+    assert ranges[1] == (3, 8)
+    assert ranges[2] == (8, 10)
+
+
+def test_assert_tail_safeguards():
+    import pytest
+    from tubecook.media.ffmpeg_utils import assert_tail, FFError
+
+    # Нормальный хвост
+    assert_tail(vdur=10.0, adur=9.5, speech_end=9.1, tail_s=0.9)
+
+    # Видео короче допустимого
+    with pytest.raises(FFError, match="финал обрезан"):
+        assert_tail(vdur=8.0, adur=9.5, speech_end=9.1, tail_s=0.9)
+
+    # Аудио длиннее видео
+    with pytest.raises(FFError, match="аудио .* длиннее видео"):
+        assert_tail(vdur=10.0, adur=10.5, speech_end=9.1, tail_s=0.9)
+
+    # Аномально длинное видео (расхождение)
+    with pytest.raises(FFError, match="аномально длинное"):
+        assert_tail(vdur=50.0, adur=9.5, speech_end=9.1, tail_s=0.9)
+

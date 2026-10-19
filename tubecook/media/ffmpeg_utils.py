@@ -66,7 +66,8 @@ def env_report() -> dict:
 def assert_tail(vdur: float, adur: float, speech_end: float, tail_s: float,
                 tol: float = 0.45) -> None:
     """Гарантия «финальная мысль не обрывается»:
-    видео >= конец речи + (tail - tol); аудио не длиннее видео.
+    видео >= конец речи + (tail - tol); аудио не длиннее видео;
+    видео не аномально длиннее звука (защита от расхождения сцен).
     """
     if vdur < speech_end + tail_s - tol:
         raise FFError(
@@ -75,6 +76,9 @@ def assert_tail(vdur: float, adur: float, speech_end: float, tail_s: float,
     if adur > vdur + 0.05:
         raise FFError(f"аудио ({adur:.2f} c) длиннее видео ({vdur:.2f} c) — "
                       "риск обрезания последней фразы")
+    if vdur > max(adur, speech_end + tail_s) + 5.0:
+        raise FFError(f"видео аномально длинное ({vdur:.2f} c) относительно звука "
+                      f"({adur:.2f} c) — проверьте длительности сцен")
 
 
 def assert_no_shortest(cmd: list) -> None:
