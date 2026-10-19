@@ -1,0 +1,17 @@
+[Unit]
+Description=Tubecook v4 — конвейер видео-новостей (бот+планировщик+воркер)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/tubecook_v4
+ExecStart=%h/projects/tubecook_v4/venv/bin/python -m tubecook.cli service
+Restart=always
+RestartSec=10
+# мягкость к другим задачам ноутбука: рендер и так однопоточный по фильтрам
+Nice=5
+CPUWeight=60
+
+[Install]
+WantedBy=default.target

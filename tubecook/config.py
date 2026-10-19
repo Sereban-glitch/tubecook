@@ -1,0 +1,208 @@
+"""Конфигурация Tubecook v4.
+
+Все секреты читаются ТОЛЬКО из окружения/.env (см. env.example).
+В коде и в этом файле секретов нет и быть не должно.
+"""
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+APP = "tubecook"
+
+
+def _env(key: str, default: str | None = None) -> str | None:
+    v = os.environ.get(key)
+    return v if v not in (None, "") else default
+
+
+def _env_int(key: str, default: int) -> int:
+    try:
+        return int(_env(key, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _env_bool(key: str, default: bool) -> bool:
+    v = _env(key)
+    if v is None:
+        return default
+    return v.strip().lower() in ("1", "true", "yes", "on", "да")
+
+
+def _env_set(key: str) -> set[int]:
+    """'12345,67890' -> {12345, 67890}; пусто -> пустое множество."""
+    raw = _env(key, "") or ""
+    out: set[int] = set()
+    for part in raw.replace(";", ",").split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            out.add(int(part))
+        except ValueError:
+            continue
+    return out
+
+
+@dataclass
+class RenderConfig:
+    # Мастер-канон: 1080x1920@30. 60 fps не используется по умолчанию:
+    # на i5-6200U выигрыш незаметен, а время рендера удваивается.
+    w: int = 1080
+    h: int = 1920
+    fps: int = 30
+    preset: str = "veryfast"
+    crf: int = 21
+    hw: str = "auto"            # auto | vaapi | cpu
+    vaapi_device: str = "/dev/dri/renderD128"
+    tail_s: float = 0.9         # хвост после последнего слова озвучки (ТЗ: 0.6-1.0 c)
+    transition_s: float = 0.35  # кроссфейд между сценами (базовый профиль)
+    profile: str = "base"       # base | extended
+
+    # профиль extended: больше движения (сдвиги, дрейф акцентов, быстрые переходы)
+    extended_transition_s: float = 0.5
+
+    def encoder(self) -> list[str]:
+        """Аппаратный или CPU-энкодер. VA-API включается, только если устройство есть."""
+        want_vaapi = self.hw == "vaapi" or (self.hw == "auto" and Path(self.vaapi_device).exists())
+        if want_vaapi and Path(self.vaapi_device).exists():
+            return ["-vaapi_device", self.vaapi_device, "-c:v", "h264_vaapi",
+                    "-b:v", "6M", "-maxrate", "8M", "-bufsize", "12M"]
+        return ["-c:v", "libx264", "-preset", self.preset, "-crf", str(self.crf)]
+
+
+@dataclass
+class TelegramOutConfig:
+    channel_id: str = ""        # @svobodnye_ludi_zp или -100...
+    budget_mb: int = 15         # продуктовый бюджет из ТЗ
+    crf_ladder: tuple = (23, 26, 28)
+    audio_k_ladder: tuple = (128, 96, 80)
+
+
+@dataclass
+class YouTubeOutConfig:
+    channel_id: str = ""        # проверяется перед live-режимом
+    privacy: str = "public"     # public | unlisted | private
+    made_for_kids: bool = False
+    disclose_synthetic: bool = True
+    category_id: int = 28       # Science & Technology
+
+
+@dataclass
+class Config:
+    root: Path = Path(".")
+    data_dir: Path = Path("data")
+    db_path: Path = Path("data/tubecook.db")
+    jobs_dir: Path = Path("data/jobs")       # артефакты рендера по job_id
+    outbox_dir: Path = Path("data/outbox")   # dry-run "публикации" и превью
+    bgm_path: Path = Path("assets/bgm/soft_loop.mp3")
+    font_bold: str = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    font_regular: str = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    sub_font: str = "DejaVu Sans"
+    log_file: Path = Path("data/tubecook.log")
+
+    tz: ZoneInfo = field(default_factory=lambda: ZoneInfo("Europe/Kyiv"))
+    slots: tuple = (0, 6, 12, 18)             # Europe/Kyiv, ТЗ
+
+    # --- доступ (ID Telegram, не токены) ---
+    admin_ids: set = field(default_factory=set)
+    allowed_sender_ids: set = field(default_factory=set)
+
+    # --- голос ---
+    voice: str = "ru-RU-DmitryNeural"
+    rate: str = "+0%"
+
+    # --- режимы ---
+    require_approval: bool = True     # HITL по умолчанию: превью Сергею перед публикацией
+    autonomous_mode: bool = False     # 4/сутки без подтверждений; включается владельцем отдельно
+    dry_run_publish: bool = True      # публикация отключена, пока владелец явно не включит live
+
+    # --- очередь / политика ---
+    lease_s: int = 900
+    max_attempts: int = 4
+    backoff_s: tuple = (300, 1800, 7200, 21600)
+    news_ttl_h: int = 36
+    catchup_max: int = 1              # после сна: не более 1 пропущенного выпуска залпом
+    empty_notify_cooldown_h: int = 12
+
+    render: RenderConfig = field(default_factory=RenderConfig)
+    tg_out: TelegramOutConfig = field(default_factory=TelegramOutConfig)
+    yt_out: YouTubeOutConfig = field(default_factory=YouTubeOutConfig)
+
+    # --- секреты (только окружение; в БД/коде не хранятся) ---
+    telegram_bot_token: str = ""
+
+    def resolve(self) -> "Config":
+        """Переводит пути в абсолютные относительно root."""
+        for p in (self.data_dir, self.db_path, self.jobs_dir, self.outbox_dir, self.log_file, self.bgm_path):
+            pass
+        self.data_dir = (self.root / self.data_dir).resolve()
+        self.db_path = (self.root / self.db_path).resolve()
+        self.jobs_dir = (self.root / self.jobs_dir).resolve()
+        self.outbox_dir = (self.root / self.outbox_dir).resolve()
+        self.log_file = (self.root / self.log_file).resolve()
+        if not Path(self.bgm_path).is_absolute():
+            self.bgm_path = (self.root / self.bgm_path).resolve()
+        for d in (self.data_dir, self.jobs_dir, self.outbox_dir):
+            d.mkdir(parents=True, exist_ok=True)
+        return self
+
+    @classmethod
+    def from_env(cls, root: str | Path = ".") -> "Config":
+        cfg = cls(root=Path(root))
+        cfg.db_path = Path(_env("TUBECOOK_DB", "data/tubecook.db"))
+        cfg.data_dir = Path(_env("TUBECOOK_DATA", "data"))
+        cfg.jobs_dir = Path(_env("TUBECOOK_JOBS_DIR", "data/jobs"))
+        cfg.outbox_dir = Path(_env("TUBECOOK_OUTBOX", "data/outbox"))
+        cfg.log_file = Path(_env("TUBECOOK_LOG", "data/tubecook.log"))
+        cfg.bgm_path = Path(_env("TUBECOOK_BGM", "assets/bgm/soft_loop.mp3"))
+        cfg.tz = ZoneInfo(_env("TUBECOOK_TZ", "Europe/Kyiv"))
+        cfg.admin_ids = _env_set("TUBECOOK_ADMINS")
+        cfg.allowed_sender_ids = _env_set("TUBECOOK_SENDERS")
+        cfg.voice = _env("TUBECOOK_VOICE", "ru-RU-DmitryNeural")
+        cfg.rate = _env("TUBECOOK_RATE", "+0%")
+        cfg.require_approval = _env_bool("TUBECOOK_REQUIRE_APPROVAL", True)
+        cfg.autonomous_mode = _env_bool("TUBECOOK_AUTONOMOUS", False)
+        cfg.dry_run_publish = _env_bool("TUBECOOK_PUBLISH_LIVE", False) is False
+        # TUBECOOK_PUBLISH_LIVE=true -> live (отключает dry-run); по умолчанию dry-run.
+        cfg.news_ttl_h = _env_int("TUBECOOK_NEWS_TTL_H", 36)
+        cfg.lease_s = _env_int("TUBECOOK_LEASE_S", 900)
+        cfg.max_attempts = _env_int("TUBECOOK_MAX_ATTEMPTS", 4)
+        cfg.sub_font = _env("TUBECOOK_SUB_FONT", "DejaVu Sans")
+        cfg.font_bold = _env("TUBECOOK_FONT_BOLD", cfg.font_bold)
+        cfg.font_regular = _env("TUBECOOK_FONT_REGULAR", cfg.font_regular)
+
+        r = cfg.render
+        r.hw = _env("TUBECOOK_HW", "auto")
+        r.profile = _env("TUBECOOK_RENDER_PROFILE", "base")
+        r.crf = _env_int("TUBECOOK_CRF", 21)
+        r.tail_s = float(_env("TUBECOOK_TAIL_S", "0.9"))
+
+        cfg.tg_out.channel_id = _env("TELEGRAM_CHANNEL_ID", "")
+        cfg.tg_out.budget_mb = _env_int("TELEGRAM_BUDGET_MB", 15)
+        cfg.yt_out.channel_id = _env("YOUTUBE_CHANNEL_ID", "")
+        cfg.yt_out.privacy = _env("YOUTUBE_PRIVACY", "public")
+        cfg.yt_out.made_for_kids = _env_bool("YOUTUBE_MADE_FOR_KIDS", False)
+        cfg.yt_out.disclose_synthetic = _env_bool("YOUTUBE_DISCLOSE_SYNTHETIC", True)
+
+        # секреты
+        cfg.telegram_bot_token = _env("TUBECOOK_TOKEN", "") or _env("TELEGRAM_BOT_TOKEN", "")
+        return cfg.resolve()
+
+
+def load_env_file(path: str | Path = ".env") -> None:
+    """Читает .env (KEY=VALUE) в os.environ, не перезаписывая уже заданные переменные."""
+    p = Path(path)
+    if not p.exists():
+        return
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        k, v = k.strip(), v.strip().strip('"').strip("'")
+        if k and k not in os.environ:
+            os.environ[k] = v

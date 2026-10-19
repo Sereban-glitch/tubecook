@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tubecook"
+version = "4.0.0rc1"
+description = "Tubecook v4 AI Edition: конвейер коротких вертикальных видео-новостей об ИИ"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+dependencies = [
+    "edge-tts>=6.1.0",
+    "Pillow>=10.0",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+telegram = ["aiogram>=3.13"]
+youtube = ["google-api-python-client>=2.100", "google-auth-oauthlib>=1.1"]
+test = ["pytest>=8.0"]
+
+[project.scripts]
+tubecook = "tubecook.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

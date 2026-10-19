@@ -1,0 +1,8 @@
+[Unit]
+Description=Tubecook v4 — один цикл обработки очереди (для таймера)
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/projects/tubecook_v4
+ExecStart=%h/projects/tubecook_v4/venv/bin/python -m tubecook.cli run-once

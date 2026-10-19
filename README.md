@@ -1,117 +1,146 @@
-# Tubecook — Автономный видеоконвейер коротких роликов (AI Edition)
+# Tubecook v4.0 AI Edition
 
-[![Pipeline: FFmpeg VA-API](https://img.shields.io/badge/Render-FFmpeg_VA--API_Intel_HD520-blue.svg)](https://trac.ffmpeg.org/wiki/Hardware/VAAPI)
-[![TTS: Edge-TTS](https://img.shields.io/badge/TTS-Edge--TTS_WordBoundary-green.svg)](https://github.com/rany2/edge-tts)
-[![Subtitles: ASS Karaoke](https://img.shields.io/badge/Subtitles-libass_Karaoke-orange.svg)](https://github.com/libass/libass)
-[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
+Автономный конвейер коротких вертикальных видео-новостей об ИИ:
 
-> 💡 **Обращение к Z.ai (AI-архитектору и разработчику):**  
-> Этот репозиторий представляет собой **рабочую отправную точку (MVP)** конвейера.  
-> Ты **не обязан** сохранять структуру один-в-один ради совместимости: разрешено выбрать более удачные инженерные решения, оптимизировать пайплайн или переработать архитектуру (например, объединить Go-бота и внешние Python-скрипты в единый асинхронный Python-сервис на `aiogram 3.x` + `apscheduler`, либо углубить Go-ядро).  
-> **Главная цель** — надёжный сквозной процесс: приём тем от Саши (OpenAI Dots) через Telegram Web, отсутствие дублей, рендер без обрыва финальной мысли на местном железе и автопостинг раз в 6 часов в Telegram и YouTube Shorts.  
-> Подробные требования описаны в документе [SPEC_V4_ZAI.md](SPEC_V4_ZAI.md).
+**свежая проверенная новость → задание через Telegram → надёжная очередь (SQLite) →
+выразительный ролик 1080x1920 с озвучкой и караоке-субтитрами →
+предпросмотр/согласование → публикация в Telegram и YouTube Shorts.**
 
----
+- Слоты публикаций: **00:00 / 06:00 / 12:00 / 18:00 Europe/Kyiv** (DST-корректно).
+- Ручное согласование (HITL) — режим по умолчанию; автономный режим 4/день
+  включается владельцем отдельно и только после первого показанного тестового выпуска.
+- **Публикация по умолчанию выключена (dry-run)** — реальные API не вызываются,
+  пока владелец явно не включит live.
+- Целевое железо: HP ProBook 440 G3 (i5-6200U, HD Graphics 520, 12 ГБ, Linux Mint).
+  VA-API используется автоматически при наличии `/dev/dri/renderD128`, иначе CPU.
+  Проверка на вашей машине: `scripts/hp_bench.sh`.
+- Бюджет: $0 на платные API. Edge-TTS (слова+тайминги), FFmpeg, Pillow,
+  процедурная графика; стоковые медиа — через сменные адаптеры.
 
-## 🚀 Архитектурная идея v4.0
+> Демо-ролики, отрендеренные этим кодом (песочница Z.ai, CPU), лежат рядом с архивом:
+> `tubecook_v4_demo_base_1080x1920.mp4`, `tubecook_v4_demo_extended_1080x1920.mp4`
+> и Telegram-версии 540x960. Сюжет помечен «ДЕМО • НЕ НОВОСТЬ».
 
-1. **Саша (OpenAI Dots, облачный агент):** непрерывно мониторит интернет (Reddit, Hacker News, X), отбирает неочевидные кейсы практического использования и заработка на ИИ, проверяет первоисточники и отправляет боту стандартизированное ТЗ через **Telegram Web**.
-2. **Сергей (Владелец):** может в любой момент прислать свою тему/ссылку (наивысший приоритет), поставить конвейер на паузу (`/pause`) или запросить статус (`/status`).
-3. **Локальный конвейер Tubecook:**
-   - Развернут на ноутбуке HP ProBook 440 G3 (Linux Mint 22.3).
-   - Держит буфер задач, защищает от повторов при сбоях связи.
-   - Строго по расписанию (1 ролик каждые 6 часов, `Europe/Kyiv`) берет задачу из очереди, генерирует озвучку (Edge-TTS), караоке-субтитры (ASS), собирает видеоряд со стоков через аппаратный енкодер Intel VA-API (`h264_vaapi`) и нормализует звук (EBU R128 -16 LUFS).
-   - Публикует выпуск в группу **«Свободные люди Запорожья»** (`@svobodnye_ludi_zp`) и на YouTube-канал **«Свободные люди Запорожья Шортс»**.
-
----
-
-## 🛠 Аппаратный профиль (Целевая машина)
-
-Конвейер оптимизирован под нулевую стоимость инфраструктуры ($0 на платные API) и работу на стандартном ноутбуке:
-* **Ноутбук:** HP ProBook 440 G3
-* **ОС:** Linux Mint 22.3 (база Ubuntu 24.04 LTS, ядро Linux 6.8)
-* **Процессор:** Intel Core i5-6200U (Skylake, 2 ядра / 4 потока, 2.30–2.80 ГГц)
-* **Память:** 12 ГБ RAM (доступно 11.8 ГБ, swap 10 ГБ)
-* **Аппаратное видео:** Intel HD Graphics 520 (`/dev/dri/renderD128`, драйвер `iHD_drv_video.so`)
-* **Скорость рендера:** 45-секундный ролик 1080x1920@30fps рендерится за ~38–180 секунд; пиковое потребление памяти — **~180 МБ**.
-
----
-
-## 📂 Структура репозитория
+## Состав пакета
 
 ```text
-├── 01_bench_vaapi.sh       # Бенчмарк аппаратного кодирования VA-API на Intel HD 520
-├── 02_fetch_stocks.py      # Сбор видео/фото (Wikimedia Commons, Openverse CC0, Pexels API)
-├── 03_tts_edge.py          # Синтез речи Edge-TTS + сбор таймкодов WordBoundary (10 мс)
-├── 04_build_ass.py         # Генератор караоке-субтитров .ass с подсветкой \k
-├── 05_normalize_clip.sh    # Канонизация клипа под 1080x1920@30 nv12 (VA-API)
-├── 06_render_short.py      # Основной рендерер v3.0 (Ken-Burns, blur background, ducking, R128)
-├── 07_upload_youtube.py    # Модуль Resumable Upload в YouTube Data API v3
-├── 08_post_telegram.py     # Модуль публикации в Telegram (видео + HTML-досье + опрос)
-├── 09_run_episode.sh       # Сквозной скрипт сборки одного выпуска
-├── main.go                 # Telegram HITL-бот оркестратора на Go
-├── assets/
-│   └── bgm/
-│       └── soft_loop.mp3   # Royalty-free фоновая музыка для авто-даккинга
-├── jobs/                   # Каталог манифестов серий и задач
-├── env.example             # Шаблон переменных окружения
-├── requirements.txt        # Python-зависимости
-├── go.mod                  # Go модуль
-├── tubecook.service        # Systemd unit для демона
-├── tubecook.timer          # Systemd timer для периодического запуска
-└── SPEC_V4_ZAI.md          # Полное техническое задание для Z.ai на версию 4.0
+tubecook/            пакет (python >=3.10)
+  config.py          конфигурация из .env (секреты только локально)
+  db.py              SQLite WAL: jobs/publish_targets/assets/events/inbox
+  protocol.py        протокол задания: разбор, валидация, дедуп-хеши, multipart
+  queue.py           очередь: атомарный ACK, lease, retry/backoff, recovery, пауза
+  scheduler.py       слоты Kyiv, DST, catch-up после сна, TTL свежести, пустая очередь
+  security.py        роли (админ/отправитель), «данные ≠ команды»
+  bot/core.py        транспорт-агностик бот-ядро (все команды, ACK, multipart)
+  bot/console_adapter.py   тот же протокол через stdin (тесты/локальная работа)
+  bot/telegram_adapter.py  aiogram 3.x (опция, ставится отдельно)
+  media/tts.py       Edge-TTS + WordBoundary + детерминированный мок (оффлайн)
+  media/ass.py       караоке-субтитры (пословная подсветка, mobile-safe)
+  media/scenes.py    сценарий → сцены по смыслу фраз, тайминги по речи
+  media/gfx.py       процедурная графика: фоны, карточки, параллакс-слой
+  media/render.py    FFmpeg: сцены→xfade→субтитры→tpad-хвост; даккинг; R128
+  media/deliver.py   Telegram-версия 540x960 ≤15 МБ (CRF-ladder), миниатюра
+  publish/…          Telegram/YouTube: dry-run, uncertain, per-target статусы
+  pipeline.py        claim → рендер (cancel-aware) → превью → публикация
+  service.py         демон: транспорт + планировщик + воркер (потоки)
+  cli.py             CLI: ingest/render/demo/status/approve/publish/bot/…
+  import_v3.py       импорт заданий v3 (read-only)
+tests/               81 тест (pytest) — вся логика без сети
+examples/            demo_job.json + образец сообщения #TUBECOOK_JOB
+deploy/              systemd-юниты + install.sh (установка рядом с v3)
+scripts/             hp_bench.sh (VA-API/CPU замеры), run_tests.sh, make_demo.sh
+docs/                протокол, облачное исследование, миграция, эксплуатация
+assets/bgm/          royalty-free фоновая музыка (унаследована из v3)
 ```
 
----
+## Быстрый старт (на ноутбуке)
 
-## 📊 Матрица верификации функций
-
-| Компонент | Статус в v3.0 | Задача для v4.0 |
-| :--- | :--- | :--- |
-| **Озвучка (Edge-TTS)** | ✅ Проверено, работает отлично | Сохранить, добавить выбор голосов (Dmitry / Svetlana). |
-| **Караоке (ASS)** | ✅ Проверено, точная синхронизация | Сохранить, оптимизировать контрастность и шрифты. |
-| **VA-API рендер 1080p** | ✅ Проверено (~180 сек/ролик) | Сохранить hardware-ускорение без перегрузки CPU. |
-| **Нормализация звука** | ✅ Проверено (-16 LUFS, EBU R128) | Сохранить двухпроходной loudnorm. |
-| **Завершение аудио** | ⚠️ Обрыв последней мысли диктора | **Исправить:** убрать `-shortest`, дополнять видеоряд стоп-кадром (`tpad=stop_mode=clone`). |
-| **Визуальный ряд** | ⚠️ Примитивный зум, старый штамп | **Улучшить:** добавить разнонаправленный Ken-Burns, AI-плашки с цифрами дохода/экономии. |
-| **Очередь и шедулер** | ⚠️ Были только кнопки APPROVE | **Реализовать:** автономное расписание 1 раз в 6 часов, буфер задач, защита от дублей. |
-| **Протокол с Сашей** | 🔄 Не было | **Реализовать:** приём структурированных сообщений `#TUBECOOK_JOB` через Telegram с квитанцией. |
-| **YouTube публикация** | 🔄 Скрипт готов, ждет OAuth | Авторизовать Desktop OAuth и включить автозагрузку. |
-
----
-
-## ⚡ Быстрый старт
-
-### 1. Системные пакеты (Linux Mint / Ubuntu)
 ```bash
-sudo apt update
+# 0) системное (Linux Mint/Ubuntu)
 sudo apt install -y ffmpeg vainfo intel-media-va-driver-non-free fonts-dejavu-core python3-venv
-```
 
-### 2. Установка Python-окружения
-```bash
-python3 -m venv venv
-source venv/bin/activate
+# 1) установка рядом с v3 (v3 не трогаем!)
+cd ~/projects
+tar xzf tubecook-v4.0.0-rc1.tar.gz && cd tubecook_v4
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-```
 
-### 3. Настройка переменных окружения
-```bash
+# 2) конфиг
 cp env.example .env
-# Отредактируйте .env, указав ваши токены и chat_id
+#   вписать ЛОКАЛЬНО: TUBECOOK_ADMINS=<ваш TG ID>, TUBECOOK_SENDERS=<ID Саши>
+#   токены НЕ в чат, НЕ в репозиторий; всё остальное можно не менять
+
+# 3) тесты (без сети, ~2 мин)
+bash scripts/run_tests.sh
+
+# 4) демо-ролик (та же озвучка, тот же сценарий, что в приложенных видео)
+python -m tubecook.cli demo --profile base
+python -m tubecook.cli demo --profile extended
+
+# 5) сверка железа (VA-API vs CPU, время/RAM) — только на HP!
+bash scripts/hp_bench.sh
+
+# 6) живая работа
+python -m tubecook.cli bot          # консольная сессия (протокол тот же, что в TG)
+python -m tubecook.cli service      # демон: бот (если задан токен) + слоты + воркер
 ```
 
-### 4. Тестовый запуск рендера
-```bash
-./09_run_episode.sh jobs/ep01_midnight_climax.json
-```
-Готовые видеоролики будут сохранены в `build/ep01/out/`:
-* `final_1080x1920.mp4` — мастер для YouTube Shorts;
-* `preview_telegram.mp4` — оптимизированная версия для Telegram (<15 МБ).
+## Режимы и безопасность
 
----
+| Параметр | По умолчанию | Смысл |
+|---|---|---|
+| `TUBECOOK_REQUIRE_APPROVAL` | true | HITL: превью Сергею, публикация после `/approve` |
+| `TUBECOOK_AUTONOMOUS` | false | 4/день без подтверждений; включать после первого проверенного выпуска |
+| `TUBECOOK_PUBLISH_LIVE` | false (dry-run) | реальные отправки; без токенов live-режим даёт явный сбой, а не тихий мок |
 
-## 📄 Лицензия
+Правила доверия (проверяются тестами):
+- отправители задаются Telegram ID (`TUBECOOK_ADMINS`, `TUBECOOK_SENDERS`) — это
+  доступ, не секреты;
+- `PRIORITY: high` и `AUTO_PUBLISH: true` из тела сообщения — **данные**,
+  они не действуют без прав отправителя и включённых режимов;
+- инструкции «поставь на паузу» внутри сценария остаются текстом, не командами;
+- задания Сергея (админа) получают приоритет manual и уходят вне общей очереди.
 
-Проект распространяется под лицензией MIT.
-Все используемые источники медиа (Wikimedia Commons, Openverse CC0, Pexels) подбираются с учётом бесплатного коммерческого использования.
+## Протокол задания (кратко)
+
+Сообщение боту начинается с `#TUBECOOK_JOB v4` (см. `SPEC_PROTOCOL.md` и
+`examples/job_message.txt`): ID, TOPIC, HOOK, SCRIPT, SOURCES (с `checked_at`),
+FACTS (с атрибуцией), VISUAL_PLAN, TAGS, LANGUAGE, MODE. Длинные задания —
+частями `PART 1/2` / `PART 2/2`: ACK выдаётся только после приёма всей задачи.
+Повтор того же ID/контента возвращает прежнюю квитанцию; конфликтующий payload
+под тем же ID — ошибка без перезаписи; обновление новости — через `/allow-update`.
+
+## Команды бота
+
+`/status /job <id> /preview <id> /approve <id> /reject <id> /cancel <id>`
+`/pause [причина] /resume /allow-update <id|url> /check <id> /test /mode /help`
+
+## Проверенное и статус на целевом ноутбуке
+
+- **Аппаратно проверено на ноутбуке HP ProBook 440 G3** (i5-6200U, Intel HD 520, Linux Mint 22.3):
+  - **81 из 81 теста пройдены** (100% green).
+  - Замер рендера VA-API (`/dev/dri/renderD128`): **204 сек (~3.4 мин)**, пиковое ОЗУ **926 МБ** (с запасом внутри лимита 3 ГБ).
+  - Замер рендера CPU (`libx264`): 217 сек, пиковое ОЗУ 1.21 ГБ.
+  - Длительности и синхронизация проверены: стоп-кадр `tpad` +0.9 сек защищает от обрыва звука, ASS караоке четкие.
+  - Полный отчет замера: [`bench_report_20261019_0159.json`](bench_report_20261019_0159.json).
+- **Следующий этап развития — модуль сбора новостей «Домдары» (`tubecook.ingest.domdara`):**
+  - Полное ТЗ для Z.ai: [`docs/SPEC_DOMDARA_INGEST.md`](docs/SPEC_DOMDARA_INGEST.md).
+  - Памятка текущего состояния и ограничений: [`docs/MEMO_STATUS.md`](docs/MEMO_STATUS.md).
+  - Связанный репозиторий мониторинга и сбора: [bot_skaner_saitov](https://github.com/Sereban-glitch/bot_skaner_saitov) (коммит `4ba2e5c`).
+- **Безопасность и контроль:**
+  - Автопубликация отключена (`require_approval = True`), реальные каналы не затронуты до личного просмотра владельцем первого ролика.
+  - В репозитории нет токенов, .env с секретами, сессий и OAuth-файлов (проверено тестами `test_no_secrets.py`).
+
+Подробнее: `docs/MEMO_STATUS.md` и `PROJECT_STATE.md`.
+
+## Откат
+
+v4 ставится в отдельный каталог и пишет в свою SQLite (`data/`). v3 и его
+`build/`, `jobs/` не изменяются. Откат: `systemctl --user stop tubecook-v4`
+(если ставили юниты) и вернуться к v3; данные v4 остаются в `data/` для разбора.
+
+## Лицензия
+
+MIT (унаследована от v3, автор Sereban-glitch). Медиа-ассеты: см. метаданные
+лицензий в `docs/OPERATIONS.md` (BGM — royalty-free из состава v3; стоковые
+клипы подключаются адаптерами с обязательным указанием URL/автора/лицензии).

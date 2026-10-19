@@ -1,0 +1,69 @@
+{
+  "machine": "qwerty-HP-ProBook-440-G3",
+  "ts": "2026-10-19T01:59:00.805256+03:00",
+  "profiles": {
+    "bench_base_cpu": {
+      "profile": "base",
+      "hw": "cpu",
+      "wall_s": 199.2,
+      "stages_s": {
+        "tts": 7.7,
+        "ass": 0.0,
+        "gfx": 17.8,
+        "audio": 9.8,
+        "video": 163.7
+      },
+      "total_s": 38.49,
+      "master_mb": 4.03,
+      "env": {
+        "python": "3.12.3",
+        "system": "Linux-6.14.0-37-generic-x86_64-with-glibc2.39",
+        "machine": "x86_64",
+        "cpu_count": 4,
+        "vaapi_device": "/dev/dri/renderD128"
+      }
+    },
+    "bench_base_vaapi": {
+      "profile": "base",
+      "hw": "vaapi",
+      "wall_s": 185.1,
+      "stages_s": {
+        "tts": 2.1,
+        "ass": 0.0,
+        "gfx": 17.9,
+        "audio": 9.9,
+        "video": 154.9
+      },
+      "total_s": 38.49,
+      "master_mb": 16.79,
+      "env": {
+        "python": "3.12.3",
+        "system": "Linux-6.14.0-37-generic-x86_64-with-glibc2.39",
+        "machine": "x86_64",
+        "cpu_count": 4,
+        "vaapi_device": "/dev/dri/renderD128"
+      }
+    },
+    "bench_extended_cpu": {
+      "profile": "extended",
+      "hw": "cpu",
+      "wall_s": 187.3,
+      "stages_s": {
+        "tts": 2.1,
+        "ass": 0.0,
+        "gfx": 17.3,
+        "audio": 9.6,
+        "video": 158.0
+      },
+      "total_s": 38.49,
+      "master_mb": 4.27,
+      "env": {
+        "python": "3.12.3",
+        "system": "Linux-6.14.0-37-generic-x86_64-with-glibc2.39",
+        "machine": "x86_64",
+        "cpu_count": 4,
+        "vaapi_device": "/dev/dri/renderD128"
+      }
+    }
+  }
+}

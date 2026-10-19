@@ -1,0 +1,15 @@
+[Unit]
+Description=Tubecook v4 — пробуждение конвейера таймером (альтернатива демону)
+
+[Timer]
+# слоты 00:00/06:00/12:00/18:00 Europe/Kyiv (systemd понимает зону)
+OnCalendar=*-*-* 00:00:00 Europe/Kyiv
+OnCalendar=*-*-* 06:00:00 Europe/Kyiv
+OnCalendar=*-*-* 12:00:00 Europe/Kyiv
+OnCalendar=*-*-* 18:00:00 Europe/Kyiv
+# плюс контрольные точки между слотами (catch-up после пробуждения)
+OnBootSec=2min
+Unit=tubecook-v4-once.service
+
+[Install]
+WantedBy=timers.target

@@ -1,16 +1,13 @@
-# ============================================================================
-# requirements.txt — конвейер ноутбука HP (Python 3.12.3, Linux Mint 22.3)
-# Установка: pip install -r requirements.txt
-# ============================================================================
+# Обязательное ядро (рендер работает без опций)
+edge-tts>=6.1.0
+Pillow>=10.0
+requests>=2.31
 
-# --- обязательные (конвейер 01-06) ---
-edge-tts>=6.1.0            # озвучка + границы слов (WordBoundary)
-requests>=2.31             # стоки Pexels/Openverse
+# Разработки/тесты
+pytest>=8.0
 
-# --- загрузка на YouTube (07, опционально ставится отдельной группой) ---
-google-api-python-client>=2.100
-google-auth-oauthlib>=1.1
-
-# ПРИМЕЧАНИЕ: Go-часть (tubecook) зависимостей не имеет вообще — это только
-# stdlib. FFmpeg ставится системно: sudo apt install ffmpeg vainfo
-# (сборка Debian/Ubuntu содержит --enable-vaapi из коробки).
+# Опционально (ставить по необходимости):
+#   Telegram-транспорт:      pip install "aiogram>=3.13"
+#   YouTube-загрузка:        pip install google-api-python-client google-auth-oauthlib
+# Системные зависимости: ffmpeg (apt install ffmpeg), шрифты DejaVu,
+# для VA-API: vainfo intel-media-va-driver-non-free
