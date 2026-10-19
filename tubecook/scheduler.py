@@ -76,7 +76,7 @@ class Scheduler:
 
         if marker_dt is None or cur_slot > marker_dt:
             missed = self._missed_count(marker_dt, cur_slot)
-            res = self._process_slot(cur_slot, ready, missed)
+            res = self._process_slot(cur_slot, ready, missed, now=now)
             dbm.set_meta(self.conn, "last_slot", cur_slot.isoformat(timespec="seconds"))
         else:
             # внутри слота: ручные задания с пройденным due публикуются сразу
@@ -106,14 +106,15 @@ class Scheduler:
             (job_id,)).fetchone()
         return row is not None
 
-    def _process_slot(self, cur_slot: datetime, ready: list, missed: int) -> TickResult:
+    def _process_slot(self, cur_slot: datetime, ready: list, missed: int,
+                      now: datetime | None = None) -> TickResult:
         res = TickResult()
         due_now = [j for j in ready if j["slot"] is None or j["slot"] <= cur_slot]
 
         # 1) свежесть (TTL) — протухшие не публикуем автоматически
         fresh = []
         for j in due_now:
-            age_h = self._age_hours(j["payload"])
+            age_h = self._age_hours(j["payload"], now=now)
             if age_h is not None and age_h > self.cfg.news_ttl_h:
                 res.stale.append(j["job_id"])
                 dbm.event(self.conn, "news_stale", j["job_id"],
@@ -165,7 +166,7 @@ class Scheduler:
                 break
         return max(n, 1)
 
-    def _age_hours(self, payload: dict) -> float | None:
+    def _age_hours(self, payload: dict, now: datetime | None = None) -> float | None:
         checked = None
         for s in payload.get("sources", []):
             if s.get("checked_at"):
@@ -178,7 +179,8 @@ class Scheduler:
             return None
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=self.cfg.tz)   # даты без зоны — местное время Kyiv
-        return (datetime.now(tz=self.cfg.tz) - dt).total_seconds() / 3600.0
+        ref_now = now or datetime.now(tz=self.cfg.tz)
+        return (ref_now - dt).total_seconds() / 3600.0
 
 
 def _parse_dt(s: str | None) -> datetime | None:
