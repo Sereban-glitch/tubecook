@@ -18,9 +18,15 @@ class SenderRole:
     UNKNOWN = "unknown"
     SENDER = "sender"      # авторизованный отправитель (например, Саша)
     ADMIN = "admin"        # владелец (Сергей)
+    DOMDARA = "domdara"    # модуль сбора новостей Домдара
+    SYSTEM = "system"      # внутренние системные задачи
 
 
 def classify_sender(sender_id: int, cfg) -> str:
+    if sender_id == -100:
+        return SenderRole.DOMDARA
+    if sender_id == 0:
+        return SenderRole.SYSTEM
     if sender_id in cfg.admin_ids:
         return SenderRole.ADMIN
     if sender_id in cfg.allowed_sender_ids:
@@ -36,6 +42,10 @@ def effective_priority(role: str, requested_priority: str) -> str:
     if role == SenderRole.ADMIN:
         # админ имеет право запросить manual; по умолчанию его задания тоже manual
         return "manual"
+    if role == SenderRole.DOMDARA or requested_priority == "domdara":
+        return "domdara"
+    if requested_priority in ("ai_news", "auto"):
+        return requested_priority
     return "auto"
 
 

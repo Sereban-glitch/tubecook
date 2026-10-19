@@ -132,6 +132,20 @@ class Config:
     tg_out: TelegramOutConfig = field(default_factory=TelegramOutConfig)
     yt_out: YouTubeOutConfig = field(default_factory=YouTubeOutConfig)
 
+    # --- Домдара (сбор новостей) ---
+    domdara_enabled: bool = True
+    domdara_feed_url: str = "http://domdara.org/feed/"
+    domdara_poll_interval_minutes: int = 30
+    domdara_initial_lookback_days: int = 3
+    domdara_seed_mode: str = "lookback"  # lookback | latest_only
+    domdara_article_ttl_days: int = 14
+    domdara_user_agent: str = "Mozilla/5.0 Codex Bridge"
+
+    # --- ИИ-прокси (анализ статей и генерация сценариев) ---
+    ai_proxy_url: str = "http://127.0.0.1:18080/v1/messages"
+    ai_proxy_key: str = "test"
+    ai_model: str = "gemini-3.8-flash-tiered"
+
     # --- секреты (только окружение; в БД/коде не хранятся) ---
     telegram_bot_token: str = ""
 
@@ -187,6 +201,20 @@ class Config:
         cfg.yt_out.privacy = _env("YOUTUBE_PRIVACY", "public")
         cfg.yt_out.made_for_kids = _env_bool("YOUTUBE_MADE_FOR_KIDS", False)
         cfg.yt_out.disclose_synthetic = _env_bool("YOUTUBE_DISCLOSE_SYNTHETIC", True)
+
+        # домдара
+        cfg.domdara_enabled = _env_bool("TUBECOOK_DOMDARA_ENABLED", True)
+        cfg.domdara_feed_url = _env("TUBECOOK_DOMDARA_FEED_URL", "http://domdara.org/feed/")
+        cfg.domdara_poll_interval_minutes = _env_int("TUBECOOK_DOMDARA_POLL_INTERVAL", 30)
+        cfg.domdara_initial_lookback_days = _env_int("TUBECOOK_DOMDARA_LOOKBACK_DAYS", 3)
+        cfg.domdara_seed_mode = _env("TUBECOOK_DOMDARA_SEED_MODE", "lookback")
+        cfg.domdara_article_ttl_days = _env_int("TUBECOOK_DOMDARA_TTL_DAYS", 14)
+        cfg.domdara_user_agent = _env("TUBECOOK_DOMDARA_USER_AGENT", "Mozilla/5.0 Codex Bridge")
+
+        # ии-прокси
+        cfg.ai_proxy_url = _env("AI_PROXY_URL", "http://127.0.0.1:18080/v1/messages")
+        cfg.ai_proxy_key = _env("AI_PROXY_KEY", "test")
+        cfg.ai_model = _env("REPORT_AI_MODEL", _env("AI_MODEL", "gemini-3.8-flash-tiered"))
 
         # секреты
         cfg.telegram_bot_token = _env("TUBECOOK_TOKEN", "") or _env("TELEGRAM_BOT_TOKEN", "")

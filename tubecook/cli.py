@@ -227,7 +227,43 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("check", help="сверить uncertain-публикации")
     p.add_argument("job_id")
     p.set_defaults(fn=cmd_check)
+
+    p = sub.add_parser("domdara-ingest", help="запуск сбора новостей Домдары")
+    p.add_argument("--dry-run", action="store_true", help="только сбор и анализ без сохранения в очередь")
+    p.add_argument("--limit", type=int, default=5, help="максимум статей за такт")
+    p.set_defaults(fn=cmd_domdara_ingest)
+
+    p = sub.add_parser("domdara-status", help="статус курсора сбора Домдары")
+    p.set_defaults(fn=cmd_domdara_status)
     return ap
+
+
+def cmd_domdara_ingest(args) -> int:
+    cfg, conn, queue = _ctx()
+    from tubecook.ingest.domdara import DomdaraIngest
+    ingest = DomdaraIngest(cfg, queue)
+    enqueued = ingest.ingest_once(dry_run=args.dry_run, limit=args.limit)
+    if enqueued:
+        print(f"Обработано заданий Domdara: {len(enqueued)}")
+        for jid in enqueued:
+            print(f"  + {jid}")
+    else:
+        print("Новых статей Domdara не обнаружено.")
+    return 0
+
+
+def cmd_domdara_status(args) -> int:
+    cfg, conn, queue = _ctx()
+    last_guid = dbm.get_meta(conn, "domdara_last_seen_guid", "не установлен")
+    last_date = dbm.get_meta(conn, "domdara_last_pub_date", "не установлен")
+    print("Статус ингеста Домдара:")
+    print(f"  feed_url: {cfg.domdara_feed_url}")
+    print(f"  enabled: {cfg.domdara_enabled}")
+    print(f"  last_seen_guid: {last_guid}")
+    print(f"  last_pub_date: {last_date}")
+    print(f"  seed_mode: {cfg.domdara_seed_mode}")
+    print(f"  lookback_days: {cfg.domdara_initial_lookback_days}")
+    return 0
 
 
 def main() -> int:

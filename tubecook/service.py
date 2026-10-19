@@ -93,6 +93,25 @@ def main(cfg: Config, console: bool = False) -> None:
 
     threading.Thread(target=_worker_loop, daemon=True, name="worker").start()
 
+    # --- опрос Домдары (периодический ингест)
+    if cfg.domdara_enabled:
+        from tubecook.ingest.domdara import DomdaraIngest
+        dom_ingest = DomdaraIngest(cfg, queue)
+
+        def _domdara_loop():
+            STOP.wait(5)
+            interval_s = max(60, cfg.domdara_poll_interval_minutes * 60)
+            while not STOP.is_set():
+                try:
+                    enqueued = dom_ingest.ingest_once(limit=3)
+                    if enqueued:
+                        core.notify_admin(f"Домдара: в очередь добавлены {len(enqueued)} сюжет(ов): {', '.join(enqueued)}")
+                except Exception as e:
+                    core.notify_admin(f"Домдара ингест: ошибка опроса: {e}")
+                STOP.wait(interval_s)
+
+        threading.Thread(target=_domdara_loop, daemon=True, name="domdara_ingest").start()
+
     def _stop(*_):
         STOP.set()
     signal.signal(signal.SIGINT, _stop)

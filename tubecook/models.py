@@ -43,8 +43,10 @@ class TargetState:
 
 
 class Priority:
-    MANUAL = "manual"   # тема/правка Сергея — выше автоматической очереди
-    AUTO = "auto"
+    MANUAL = "manual"   # тема/правка Сергея — высший приоритет, вне очереди
+    AI_NEWS = "ai_news" # подборка новостей ИИ от Саши
+    AUTO = "auto"       # стандартные автоматические задачи
+    DOMDARA = "domdara" # новости сообщества Домдара
 
 
 @dataclass

@@ -175,7 +175,7 @@ class Queue:
             row = c.execute(
                 "SELECT * FROM jobs WHERE state=?"
                 " AND (due_at IS NULL OR due_at <= ?)"
-                " ORDER BY CASE priority WHEN 'manual' THEN 0 ELSE 1 END,"
+                " ORDER BY CASE priority WHEN 'manual' THEN 0 WHEN 'ai_news' THEN 1 WHEN 'auto' THEN 2 WHEN 'domdara' THEN 3 ELSE 4 END,"
                 " due_at ASC, created_at ASC LIMIT 1",
                 (JobState.QUEUED, now)).fetchone()
             if row is None:
