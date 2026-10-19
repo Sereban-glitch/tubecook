@@ -217,12 +217,30 @@ class DomdaraIngest:
             clean_id = re.sub(r"[^a-zA-Z0-9_-]", "", guid.replace("http://domdara.org/?p=", "p"))
             job_id = f"domdara-{clean_id}-{item['pub_dt'].strftime('%Y%m%d')}"
 
+            # Загружаем тематическое фото статьи, если есть в источнике
+            vplan = list(analyzed.get("visual_plan", []))
+            lead_img_url = analyzed.get("meta", {}).get("lead_image")
+            if lead_img_url:
+                try:
+                    img_data = fetch_url(lead_img_url, user_agent=self.cfg.domdara_user_agent, timeout=15.0)
+                    assets_dir = self.cfg.data_dir / "assets"
+                    assets_dir.mkdir(parents=True, exist_ok=True)
+                    local_p = assets_dir / f"{clean_id}.jpg"
+                    local_p.write_bytes(img_data)
+                    local_img_path = str(local_p)
+                    for sc_item in vplan:
+                        if sc_item.get("image_url"):
+                            sc_item["image_url"] = local_img_path
+                    logger.info("Сохранено тематическое фото статьи %s -> %s", lead_img_url, local_img_path)
+                except Exception as img_err:
+                    logger.warning("Не удалось скачать фото статьи %s (%s): %s", clean_id, lead_img_url, img_err)
+
             payload = {
                 "job_id": job_id,
                 "topic": analyzed["topic"],
                 "hook": analyzed["hook"],
                 "script": analyzed["script"],
-                "visual_plan": analyzed.get("visual_plan", []),
+                "visual_plan": vplan,
                 "facts": analyzed.get("facts", []),
                 "sources": analyzed.get("sources", []),
                 "tags": analyzed.get("tags", []),
