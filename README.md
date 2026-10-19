@@ -124,9 +124,10 @@ FACTS (с атрибуцией), VISUAL_PLAN, TAGS, LANGUAGE, MODE. Длинны
   - Длительности и синхронизация проверены: стоп-кадр `tpad` +0.9 сек защищает от обрыва звука, ASS караоке четкие.
   - Полный отчет замера: [`bench_report_20261019_0159.json`](bench_report_20261019_0159.json).
 - **Следующий этап развития — модуль сбора новостей «Домдары» (`tubecook.ingest.domdara`):**
-  - Полное ТЗ для Z.ai: [`docs/SPEC_DOMDARA_INGEST.md`](docs/SPEC_DOMDARA_INGEST.md).
+  - Полное ТЗ (Часть 1 — сбор, очередь, оффлайн): [`docs/SPEC_DOMDARA_INGEST.md`](docs/SPEC_DOMDARA_INGEST.md).
+  - Уточнение ТЗ (Часть 2 — существующий ИИ-прокси и видеосценарий): [`docs/SPEC_DOMDARA_PART2_AI_SCRIPT.md`](docs/SPEC_DOMDARA_PART2_AI_SCRIPT.md).
   - Памятка текущего состояния и ограничений: [`docs/MEMO_STATUS.md`](docs/MEMO_STATUS.md).
-  - Связанный репозиторий мониторинга и сбора: [bot_skaner_saitov](https://github.com/Sereban-glitch/bot_skaner_saitov) (коммит `4ba2e5c`).
+  - Связанный репозиторий мониторинга и сбора: [bot_skaner_saitov](https://github.com/Sereban-glitch/bot_skaner_saitov) (коммит `84288b2`).
 - **Безопасность и контроль:**
   - Автопубликация отключена (`require_approval = True`), реальные каналы не затронуты до личного просмотра владельцем первого ролика.
   - В репозитории нет токенов, .env с секретами, сессий и OAuth-файлов (проверено тестами `test_no_secrets.py`).

@@ -65,5 +65,7 @@
 
 ## 3. Следующий шаг
 
-- Реализация адаптера `tubecook.ingest.domdara` по спецификации [`SPEC_DOMDARA_INGEST.md`](file:///home/qwerty/projects/tubecook_v4/docs/SPEC_DOMDARA_INGEST.md).
+- Реализация адаптера `tubecook.ingest.domdara` по спецификациям:
+  - Часть 1 (Сбор, очередь, оффлайн): [`SPEC_DOMDARA_INGEST.md`](SPEC_DOMDARA_INGEST.md)
+  - Часть 2 (ИИ-разбор и сценарий): [`SPEC_DOMDARA_PART2_AI_SCRIPT.md`](SPEC_DOMDARA_PART2_AI_SCRIPT.md)
 - Генерация первого видеоролика на основе реальной статьи Домдары и показ владельцу.
