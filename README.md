@@ -45,12 +45,14 @@ tubecook/            пакет (python >=3.10)
   service.py         демон: транспорт + планировщик + воркер (потоки)
   cli.py             CLI: ingest/render/demo/status/approve/publish/bot/…
   import_v3.py       импорт заданий v3 (read-only)
-tests/               81 тест (pytest) — вся логика без сети
+tests/               128 тестов (pytest) — вся логика без сети
 examples/            demo_job.json + образец сообщения #TUBECOOK_JOB
 deploy/              systemd-юниты + install.sh (установка рядом с v3)
-scripts/             hp_bench.sh (VA-API/CPU замеры), run_tests.sh, make_demo.sh
+scripts/             hp_bench.sh (VA-API/CPU замеры), run_tests.sh, make_demo.sh,
+                     make_bgm.py (генератор нейтральной подложки)
 docs/                протокол, облачное исследование, миграция, эксплуатация
-assets/bgm/          royalty-free фоновая музыка (унаследована из v3)
+assets/bgm/          news/legal/tech — процедурная подложка v4.1 (make_bgm.py);
+                     soft_loop.mp3 (legacy) — из состава v3
 ```
 
 ## Быстрый старт (на ноутбуке)

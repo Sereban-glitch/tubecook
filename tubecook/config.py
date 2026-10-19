@@ -12,6 +12,17 @@ from zoneinfo import ZoneInfo
 
 APP = "tubecook"
 
+# Категории фоновой музыки: нейтральные подложки вместо мрачного legacy-трека.
+# TUBECOOK_BGM принимает: имя категории (news|legal|tech|legacy), путь к файлу
+# или none/off (без музыки). Файлы: assets/bgm/<cat>_loop.mp3 (scripts/make_bgm.py).
+BGM_CATEGORIES = {
+    "news": "assets/bgm/news_loop.mp3",
+    "legal": "assets/bgm/legal_loop.mp3",
+    "tech": "assets/bgm/tech_loop.mp3",
+    "legacy": "assets/bgm/soft_loop.mp3",   # старый трек, оставлен для сравнения
+}
+BGM_OFF = ("none", "off", "no", "")
+
 
 def _env(key: str, default: str | None = None) -> str | None:
     v = os.environ.get(key)
@@ -45,6 +56,36 @@ def _env_set(key: str) -> set[int]:
         except ValueError:
             continue
     return out
+
+
+def _env_float(key: str, default: float) -> float:
+    try:
+        return float(_env(key, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _clamp(v: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, v))
+
+
+def _resolve_bgm(raw: str | None, root: Path) -> tuple:
+    """TUBECOOK_BGM -> (Path|None, category|path|none).
+
+    Принимает: категорию (news|legal|tech|legacy), путь к файлу или
+    none/off. Возвращает (bgm_path_abs_or_None, описание выбора) —
+    описание попадает в отчёт рендера, чтобы выбор музыки был прозрачным.
+    """
+    val = (raw or "").strip()
+    low = val.lower()
+    if low in BGM_OFF:
+        return None, "none"
+    if low in BGM_CATEGORIES:
+        return (root / BGM_CATEGORIES[low]).resolve(), low
+    p = Path(val)
+    if not p.is_absolute():
+        p = (root / p).resolve()
+    return p, str(p)
 
 
 @dataclass
@@ -98,7 +139,11 @@ class Config:
     db_path: Path = Path("data/tubecook.db")
     jobs_dir: Path = Path("data/jobs")       # артефакты рендера по job_id
     outbox_dir: Path = Path("data/outbox")   # dry-run "публикации" и превью
-    bgm_path: Path = Path("assets/bgm/soft_loop.mp3")
+    bgm_path: Path | None = Path(BGM_CATEGORIES["news"])
+    bgm_category: str = "news"      # news | legal | tech | legacy | none | <путь>
+    # Громкость подложки до даккинга (треки нормализованы к пику -12 dBFS;
+    # 0.5 -> легкий фон ~ -26..-30 dB RMS, голос остаётся кристально чистым).
+    bgm_volume: float = 0.5
     font_bold: str = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
     font_regular: str = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
     sub_font: str = "DejaVu Sans"
@@ -151,14 +196,12 @@ class Config:
 
     def resolve(self) -> "Config":
         """Переводит пути в абсолютные относительно root."""
-        for p in (self.data_dir, self.db_path, self.jobs_dir, self.outbox_dir, self.log_file, self.bgm_path):
-            pass
         self.data_dir = (self.root / self.data_dir).resolve()
         self.db_path = (self.root / self.db_path).resolve()
         self.jobs_dir = (self.root / self.jobs_dir).resolve()
         self.outbox_dir = (self.root / self.outbox_dir).resolve()
         self.log_file = (self.root / self.log_file).resolve()
-        if not Path(self.bgm_path).is_absolute():
+        if self.bgm_path is not None and not Path(self.bgm_path).is_absolute():
             self.bgm_path = (self.root / self.bgm_path).resolve()
         for d in (self.data_dir, self.jobs_dir, self.outbox_dir):
             d.mkdir(parents=True, exist_ok=True)
@@ -172,7 +215,8 @@ class Config:
         cfg.jobs_dir = Path(_env("TUBECOOK_JOBS_DIR", "data/jobs"))
         cfg.outbox_dir = Path(_env("TUBECOOK_OUTBOX", "data/outbox"))
         cfg.log_file = Path(_env("TUBECOOK_LOG", "data/tubecook.log"))
-        cfg.bgm_path = Path(_env("TUBECOOK_BGM", "assets/bgm/soft_loop.mp3"))
+        cfg.bgm_path, cfg.bgm_category = _resolve_bgm(_env("TUBECOOK_BGM", "news"), root=Path(root))
+        cfg.bgm_volume = _clamp(_env_float("TUBECOOK_BGM_VOLUME", 0.5), 0.0, 1.5)
         cfg.tz = ZoneInfo(_env("TUBECOOK_TZ", "Europe/Kyiv"))
         cfg.admin_ids = _env_set("TUBECOOK_ADMINS")
         cfg.allowed_sender_ids = _env_set("TUBECOOK_SENDERS")

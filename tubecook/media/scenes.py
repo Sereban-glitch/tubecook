@@ -7,14 +7,17 @@ visual_plan из задания может переопределить вид �
 """
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass
 class Scene:
     index: int
     kind: str                 # hook | fact | stat | compare | quote | outro
+                              # | case | verdict | problem | practical_value
     text: str
     start: float              # c, по словам озвучки
     end: float
@@ -28,6 +31,13 @@ class Scene:
     demo: bool = False
     seed: int = 42
     out_dir: str = ""
+    # --- motion design / юридические карточки ---
+    badge: str = ""            # текст плашки-бейджа (ASS-анимация въезда)
+    kinetic: str = ""          # крупный кинетический акцент (номер дела, цифра)
+    case_number: str = ""      # «280/8165/23»
+    points: list = field(default_factory=list)   # пункты карточки (из описания)
+    subtitle: str = ""         # подпись карточки дела (название суда и т.п.)
+    image: str = ""            # абсолютный путь к фото сцены, если есть
 
     def to_dict(self) -> dict:
         return dict(self.__dict__)
@@ -35,7 +45,22 @@ class Scene:
 
 _SENT_SPLIT = re.compile(r"(?<=[.!?…])\s+")
 _NUM_RE = re.compile(r"[\$€]?\d[\d\s.,]*\d?%?(?:[×x]\d+)?|[\$€]\d+")
-_COMPARE_RE = re.compile(r"\b(vs|versus|сравн\w*|вместо|отлич\w*|против)\b", re.I)
+_COMPARE_RE = re.compile(r"\b(vs|versus|сравн[\wа-яё]*|вместо|отлич[\wа-яё]*|против)\b", re.I)
+_CASE_RE = re.compile(r"\b(\d{1,6}/\d{1,8}/\d{2,4})\b")
+
+# виды сцен, которые plan может задать явно (dict {"kind": ...})
+_PLAN_KINDS = ("hook", "outro", "stat", "compare", "quote", "fact",
+              "case", "verdict", "problem", "practical_value")
+
+# надписи-бейджи по виду сцены (плавный въезд плашки сверху)
+_KIND_BADGES = {
+    "verdict": "РЕШЕНИЕ СУДА",
+    "problem": "СТОРОНЫ СПОРА",
+    "practical_value": "ПРАКТИЧЕСКИЙ ВЫВОД",
+    "compare": "СРАВНЕНИЕ",
+    "quote": "ЦИТАТА",
+    "fact": "ФАКТ",
+}
 
 
 def split_sentences(script: str) -> list:
@@ -43,8 +68,61 @@ def split_sentences(script: str) -> list:
     return sents
 
 
+def sentence_word_spans(script: str, words: list) -> list:
+    """Диапазоны слов [i, j) по предложениям — для субтитров и сцен.
+
+    Единая точка выравнивания: и ass.py, и build_scenes используют одни
+    и те же границы предложений (строка субтитров никогда не склеивает
+    конец одного предложения с началом следующего).
+    """
+    return align_words_to_sentences(words, split_sentences(script))
+
+
+def extract_case_number(text: str) -> str:
+    """Номер судебного дела в украинском формате «280/8165/23» (если есть)."""
+    m = _CASE_RE.search(text or "")
+    return m.group(1) if m else ""
+
+
+def parse_plan_description(desc: str) -> tuple:
+    """Описание плана -> (метка-префикс, [пункты]).
+
+    «Решение суда: действия… • обязать…» -> ("Решение суда",
+        ["действия…", "обязать…"]). Пункты после префикса не теряются.
+    """
+    desc = (desc or "").strip()
+    if not desc:
+        return "", []
+    label = ""
+    m = re.match(r"^([^:•]{1,40}):\s*(.*)$", desc, re.S)
+    if m:
+        label = m.group(1).strip()
+        desc = m.group(2).strip()
+    points = [p.strip() for p in desc.split("•") if p.strip()]
+    return label, points
+
+
 def _norm(tok: str) -> str:
     return re.sub(r"[^\wа-яё]", "", tok.lower())
+
+
+def _plan_item(plan: list, idx: int):
+    """Элемент visual_plan для предложения idx (или None).
+
+    Поддерживает обе конвенции планов:
+    - план индексирован ПО СЦЕНАМ (первый элемент dict с kind="hook",
+      как в job_domdara_vodokanal.json): item = plan[idx];
+    - план перечисляет только body-фразы (SAMPLE: ["stat: 42"]):
+      item = plan[idx-1] (поведение rc1 сохранено).
+    """
+    if not plan:
+        return None
+    hook_indexed = (isinstance(plan[0], dict) and
+                    str(plan[0].get("kind", "")).lower() == "hook")
+    if hook_indexed:
+        return plan[idx] if 0 <= idx < len(plan) else None
+    body_i = idx - 1
+    return plan[body_i] if 0 <= body_i < len(plan) else None
 
 
 def _classify(sent: str, idx: int, total: int, plan: list) -> str:
@@ -53,15 +131,22 @@ def _classify(sent: str, idx: int, total: int, plan: list) -> str:
         return "hook"
     if idx == total - 1:
         return "outro"
-    # явный override из visual_plan: строки вида "stat: ...", "compare: ...",
-    # "quote: ..." или словари вида {"kind": "stat"} относятся к n-й не-хук/не-аутро фразе по порядку
-    body_i = idx - 1
-    if plan and body_i < len(plan):
-        item = plan[body_i]
+    # явный override из visual_plan (см. _plan_item — обе конвенции планов)
+    item = _plan_item(plan, idx)
+    if item is not None:
         if isinstance(item, dict):
             k = str(item.get("kind", "")).lower()
-            if k in ("hook", "outro", "stat", "compare", "quote", "fact"):
-                return k
+            if k == "fact_card":
+                k = "case"          # карточка дела — юридический шаблон
+            if k in _PLAN_KINDS:
+                # защита: hook/outro в теле плана — признак кривого плана,
+                # не ломаем раскладку сцен
+                if k == "hook" and idx != 0:
+                    k = ""
+                elif k == "outro" and idx != total - 1:
+                    k = ""
+                if k:
+                    return k
             if "fact" in k:
                 return "fact"
         else:
@@ -167,6 +252,7 @@ def build_scenes(payload: dict, words: list, speech_end: float,
     plan = plan if plan is not None else payload.get("visual_plan", [])
     demo = bool(payload.get("demo"))
     ranges = align_words_to_sentences(words, sentences)
+    meta_case = str((payload.get("meta") or {}).get("primary_case_number", ""))
 
     scenes: list = []
     fact_idx = 0
@@ -181,18 +267,60 @@ def build_scenes(payload: dict, words: list, speech_end: float,
             start=max(0.0, start - 0.15), end=min(speech_end + 0.05, end + 0.2),
             demo=demo, out_dir=out_dir, seed=100 + idx * 13,
             channel=channel)
+
+        # описание/фото из visual_plan (если задано) — данные для карточек
+        desc, image_url = "", ""
+        item = _plan_item(plan, idx)
+        if item is not None and isinstance(item, dict):
+            desc = str(item.get("description", "") or "")
+            image_url = str(item.get("image_url", "") or "")
+        label, points = parse_plan_description(desc)
+
+        # номер дела: описание -> текст фразы -> meta задания
+        sc.case_number = (extract_case_number(desc) or
+                          extract_case_number(sent) or
+                          extract_case_number(meta_case) or "")
+
         if kind == "hook":
             src = payload.get("sources", [])
             sc.note = _domain_of(src[0]["url"]) if src else ""
         elif kind == "stat":
             sc.number = _extract_number(sent)
+            sc.badge = "ДАННЫЕ"
+            sc.kinetic = sc.number        # крупный кинетический акцент
         elif kind == "compare":
             sc.a, sc.b = _split_compare(sent)
+            sc.badge = _KIND_BADGES["compare"]
+        elif kind == "quote":
+            sc.badge = _KIND_BADGES["quote"]
+        elif kind == "case":
+            sc.badge = f"ДЕЛО № {sc.case_number}" if sc.case_number else "КАРТОЧКА ДЕЛА"
+            sc.kinetic = sc.badge          # scale-up акцент на номере дела
+            sc.points = points[:4]
+            # подпись карточки: название суда и т.п. (последний пункт описания)
+            sc.subtitle = points[-1] if len(points) >= 2 else (points[0] if points else "")
+        elif kind == "verdict":
+            sc.badge = _KIND_BADGES["verdict"]
+            sc.points = points[:5]
+        elif kind == "problem":
+            sc.badge = _KIND_BADGES["problem"]
+            sc.points = points[:4]
+        elif kind == "practical_value":
+            sc.badge = _KIND_BADGES["practical_value"]
+            sc.points = points[:5]
         elif kind == "fact":
             fact_idx += 1
             sc.index_display = fact_idx
+            sc.badge = f"ФАКТ {fact_idx}"
             if fact_idx - 1 < len(facts):
                 sc.attribution = facts[fact_idx - 1].get("attribution", "")
+
+        # фото сцены (если указано и файл реально существует на диске)
+        if image_url:
+            p = Path(image_url)
+            if not p.is_absolute():
+                p = (Path.cwd() / p).resolve()
+            sc.image = str(p) if p.exists() else ""
         scenes.append(sc)
 
     scenes = _balance_durations(scenes, speech_end)

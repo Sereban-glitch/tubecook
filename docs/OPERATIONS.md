@@ -41,7 +41,11 @@ journalctl --user -u tubecook-v4.service -f
 Формат хранения метаданных — таблица `assets` (SQLite): для каждого актива
 URL, автор, лицензия и её версия, требуемая атрибуция, дата, преобразования.
 
-- BGM `assets/bgm/soft_loop.mp3` — «royalty-free» из состава v3; владелец
+- BGM v4.1: `news_loop.mp3`, `legal_loop.mp3`, `tech_loop.mp3` — сгенерированы
+  процедурно `scripts/make_bgm.py` (numpy, без внешних сервисов и сэмплов) —
+  права чистые, воспроизводимы детерминированно; выбор через `TUBECOOK_BGM`
+  (news|legal|tech|legacy|none|путь), громкость `TUBECOOK_BGM_VOLUME`.
+  `assets/bgm/soft_loop.mp3` (legacy) — «royalty-free» из состава v3; владелец
   должен подтвердить происхождение/право на регулярное использование.
 - Стоковые фото/видео: Pexels — собственные условия сервиса (не CC0!),
   Openverse/Wikimedia — смешанные лицензии (не целиком CC0): при подключении

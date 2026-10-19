@@ -179,6 +179,169 @@ def hook_card(hook: str, source_note: str = "", demo: bool = False) -> Image.Ima
     return img
 
 
+# ------------------------------------------------------- фото и юршаблоны
+
+def _cover_image(path: str, box_w: int, box_h: int, radius: int = 36) -> Image.Image:
+    """Фото -> скруглённая обложка под бокс (cover-crop, без искажений)."""
+    photo = Image.open(path).convert("RGB")
+    src_w, src_h = photo.size
+    scale = max(box_w / src_w, box_h / src_h)
+    photo = photo.resize((max(box_w, int(src_w * scale + 0.5)),
+                          max(box_h, int(src_h * scale + 0.5))),
+                         Image.LANCZOS)
+    pw, ph = photo.size
+    left, top = (pw - box_w) // 2, (ph - box_h) // 2
+    photo = photo.crop((left, top, left + box_w, top + box_h))
+    mask = Image.new("L", (box_w, box_h), 0)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, box_w, box_h], radius=radius,
+                                            fill=255)
+    out = Image.new("RGBA", (box_w, box_h), (0, 0, 0, 0))
+    out.paste(photo, (0, 0), mask)
+    return out
+
+
+def _photo_frame(img: Image.Image, path: str, box: list) -> bool:
+    """Вставляет фото в скруглённую рамку с бордюром. False — файла нет."""
+    try:
+        x0, y0, x1, y1 = box
+        cover = _cover_image(path, x1 - x0, y1 - y0)
+    except Exception:
+        return False
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([x0 - 6, y0 - 6, x1 + 6, y1 + 6], radius=42,
+                        outline=(*CARD_BORDER, 255), width=6)
+    img.alpha_composite(cover, (x0, y0))
+    return True
+
+
+def case_card(case_number: str, subtitle: str, text: str,
+              points: list | None = None, demo: bool = False) -> Image.Image:
+    """Юршаблон «Карточка дела»: номер крупно + суд + детали."""
+    img = _card_base()
+    d = ImageDraw.Draw(img)
+    box = [90, 500, W - 90, 1350]
+    _rounded(d, box, 44, (*CARD_BG, 248), outline=(*CARD_BORDER, 255), width=3)
+    _chip(d, W // 2, box[1] + 70, "№ ДЕЛА", font_size=28)
+    num = case_number or "—"
+    font, _ = fit_text(d, num, 132, box[2] - box[0] - 160, 2)
+    w = d.textlength(num, font=font)
+    # свечение номера — как у stat-карточки
+    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(glow).text((W / 2 - w / 2, box[1] + 150), num, font=font,
+                              fill=(*ACCENT, 190))
+    img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(14)))
+    d = ImageDraw.Draw(img)
+    d.text((W / 2 - w / 2, box[1] + 150), num, font=font, fill=(*WHITE, 255))
+    y = box[1] + 150 + font.size + 40
+    d.rounded_rectangle([W // 2 - 130, y, W // 2 + 130, y + 10], radius=5,
+                        fill=(*ACCENT, 255))
+    y += 56
+    if subtitle:
+        sf, slines = fit_text(d, subtitle, 44, box[2] - box[0] - 140, 2)
+        for ln in slines:
+            lw = d.textlength(ln, font=sf)
+            d.text((W / 2 - lw / 2, y), ln, font=sf, fill=(*ACCENT, 245))
+            y += sf.size + 14
+        y += 24
+    body = points if points else ([text] if text else [])
+    bf, blines = fit_text(d, " ".join(body), 40, box[2] - box[0] - 150, 5,
+                          bold=False)
+    for ln in blines:
+        d.ellipse([box[0] + 64, y + 20, box[0] + 80, y + 36], fill=(*ACCENT2, 255))
+        d.text((box[0] + 104, y), ln, font=bf, fill=(*WHITE, 250))
+        y += bf.size + 16
+    if demo:
+        _demo_chip(img)
+    return img
+
+
+def verdict_card(points: list, text: str, demo: bool = False) -> Image.Image:
+    """Юршаблон «Решение»: пункты-тезисы с акцентными маркерами."""
+    img = _card_base()
+    d = ImageDraw.Draw(img)
+    box = [90, 520, W - 90, 1340]
+    _rounded(d, box, 44, (*CARD_BG, 248), outline=(*ACCENT, 200), width=4)
+    items = [p for p in (points or []) if p.strip()] or [text]
+    y = box[1] + 90
+    for i, point in enumerate(items[:5]):
+        # маркер-галочка в акцентном круге
+        cy = y + 26
+        d.ellipse([box[0] + 52, cy - 30, box[0] + 112, cy + 30],
+                  fill=(*ACCENT, 235))
+        mf = _font(40)
+        d.line([box[0] + 68, cy, box[0] + 80, cy + 12], fill=(10, 16, 30, 255), width=6)
+        d.line([box[0] + 80, cy + 12, box[0] + 98, cy - 12], fill=(10, 16, 30, 255), width=6)
+        pf, plines = fit_text(d, point, 46, box[2] - box[0] - 230, 3)
+        for ln in plines:
+            d.text((box[0] + 140, y), ln, font=pf, fill=(*WHITE, 255))
+            y += pf.size + 12
+        y += 34
+        if y > box[3] - 120:
+            break
+    if demo:
+        _demo_chip(img)
+    return img
+
+
+def problem_card(text: str, image: str = "", points: list | None = None,
+                 demo: bool = False) -> Image.Image:
+    """Юршаблон «Стороны спора»: фото в рамке + суть спора."""
+    img = _card_base()
+    d = ImageDraw.Draw(img)
+    has_photo = bool(image) and _photo_frame(img, image, [120, 470, W - 120, 1240])
+    if not has_photo:
+        box = [90, 520, W - 90, 1300]
+        _rounded(d, box, 44, (*CARD_BG, 248), outline=(*CARD_BORDER, 255), width=3)
+        font, lines = fit_text(d, text, 54, box[2] - box[0] - 150, 6, bold=False)
+        y = box[1] + 90
+        for ln in lines:
+            d.text((box[0] + 75, y), ln, font=font, fill=(*WHITE, 255))
+            y += font.size + 16
+    else:
+        # плашка-подпись под фото: первые слова сути спора
+        font, lines = fit_text(d, text, 44, W - 260, 3, bold=False)
+        y = 1290
+        for ln in lines:
+            lw = d.textlength(ln, font=font)
+            d.rounded_rectangle([W / 2 - lw / 2 - 26, y - 14, W / 2 + lw / 2 + 26,
+                                 y + font.size + 12], radius=16,
+                                fill=(*CARD_BG, 235))
+            d.text((W / 2 - lw / 2, y), ln, font=font, fill=(*WHITE, 250))
+            y += font.size + 26
+    if demo:
+        _demo_chip(img)
+    return img
+
+
+def steps_card(points: list, text: str, demo: bool = False) -> Image.Image:
+    """Юршаблон «Практический вывод»: нумерованные шаги."""
+    img = _card_base()
+    d = ImageDraw.Draw(img)
+    box = [90, 500, W - 90, 1360]
+    _rounded(d, box, 44, (*CARD_BG, 248), outline=(*CARD_BORDER, 255), width=3)
+    items = [p for p in (points or []) if p.strip()]
+    if not items:
+        items = [text]
+    y = box[1] + 70
+    for i, point in enumerate(items[:4], start=1):
+        d.ellipse([box[0] + 50, y + 6, box[0] + 146, y + 102],
+                  fill=(*ACCENT2, 235), outline=(*ACCENT2, 255), width=3)
+        nf = _font(52)
+        num = str(i)
+        d.text((box[0] + 98 - d.textlength(num, font=nf) / 2, y + 22), num,
+               font=nf, fill=(10, 16, 30, 255))
+        pf, plines = fit_text(d, point, 44, box[2] - box[0] - 270, 3)
+        for ln in plines:
+            d.text((box[0] + 180, y + 10), ln, font=pf, fill=(*WHITE, 255))
+            y += pf.size + 12
+        y += 44
+        if y > box[3] - 110:
+            break
+    if demo:
+        _demo_chip(img)
+    return img
+
+
 def fact_card(index: int, text: str, attribution: str = "",
               demo: bool = False) -> Image.Image:
     img = _card_base()
@@ -356,6 +519,16 @@ def render_scene_layers(scene: dict, cfg_font_bold=None, cfg_font_reg=None) -> d
         card = compare_card(scene.get("a", "A"), scene.get("b", "B"), demo)
     elif kind == "quote":
         card = quote_card(scene["text"], demo)
+    elif kind == "case":
+        card = case_card(scene.get("case_number", ""), scene.get("subtitle", ""),
+                         scene["text"], scene.get("points") or [], demo)
+    elif kind == "verdict":
+        card = verdict_card(scene.get("points") or [], scene["text"], demo)
+    elif kind == "problem":
+        card = problem_card(scene["text"], scene.get("image", ""),
+                            scene.get("points") or [], demo)
+    elif kind == "practical_value":
+        card = steps_card(scene.get("points") or [], scene["text"], demo)
     elif kind == "outro":
         card = outro_card(scene.get("channel", "Свободные люди Запорожья"),
                           demo=demo)
