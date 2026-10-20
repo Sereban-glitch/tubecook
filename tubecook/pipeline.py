@@ -19,11 +19,12 @@ from tubecook.scheduler import next_slot
 
 
 class Pipeline:
-    def __init__(self, cfg, queue, bot=None, publishers=None):
+    def __init__(self, cfg, queue, bot=None, publishers=None, engine: str = "edge"):
         self.cfg = cfg
         self.queue = queue
         self.bot = bot                # BotCore (уведомления) или None
         self.publishers = publishers or {}
+        self.engine = engine
 
     # ------------------------------------------------------------------ рендер
 
@@ -49,7 +50,8 @@ class Pipeline:
         # артефакты прошлой попытки — продолжаем с места (resume по файлам)
         self.queue.complete_stage(jid, JobState.RENDERING, owner)
         res = render.render_episode(payload, self.cfg, work,
-                                     profile=self.cfg.render.profile)
+                                     profile=self.cfg.render.profile,
+                                     engine=self.engine)
         if cancelled():
             self._notify(f"{jid}: отменён во время рендера (аудит сохранён)")
             return res

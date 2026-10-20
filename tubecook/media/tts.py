@@ -85,19 +85,39 @@ def synthesize(text: str, cfg, out_dir: Path, engine: str = "auto") -> TTSResult
     if engine in ("auto", "edge"):
         mp3 = out_dir / f"voice_{key}.mp3"
         words_f = out_dir / f"words_{key}.json"
-        if words_f.exists() and mp3.exists():
-            words = json.loads(words_f.read_text(encoding="utf-8"))
-            return TTSResult(str(mp3), words, words[-1]["end"], engine="cache")
-        try:
-            words = asyncio.run(_edge_synthesize(text, cfg.voice, cfg.rate, mp3))
-            words_f.write_text(json.dumps(words, ensure_ascii=False), encoding="utf-8")
-            return TTSResult(str(mp3), words, words[-1]["end"], engine="edge")
-        except ImportError as e:
-            if engine == "edge":
-                raise TTSError(f"edge-tts не установлен: {e}")
-        except Exception as e:  # сеть/сервис недоступны
-            if engine == "edge":
-                raise TTSError(f"edge-tts сбой (сеть/сервис): {e}")
+        if words_f.exists() and mp3.exists() and mp3.stat().st_size > 1000 and words_f.stat().st_size > 10:
+            try:
+                words = json.loads(words_f.read_text(encoding="utf-8"))
+                if words:
+                    return TTSResult(str(mp3), words, words[-1]["end"], engine="cache")
+            except Exception:
+                pass
+        
+        import time
+        last_err = None
+        for attempt in range(3):
+            tmp_mp3 = out_dir / f"voice_{key}.tmp.mp3"
+            try:
+                words = asyncio.run(_edge_synthesize(text, cfg.voice, cfg.rate, tmp_mp3))
+                if tmp_mp3.exists() and tmp_mp3.stat().st_size > 1000 and words:
+                    tmp_mp3.replace(mp3)
+                    words_f.write_text(json.dumps(words, ensure_ascii=False), encoding="utf-8")
+                    return TTSResult(str(mp3), words, words[-1]["end"], engine="edge")
+            except ImportError as e:
+                last_err = e
+                break
+            except Exception as e:
+                last_err = e
+                if tmp_mp3.exists():
+                    try:
+                        tmp_mp3.unlink()
+                    except Exception:
+                        pass
+                if attempt < 2:
+                    time.sleep(1.0 * (attempt + 1))
+        
+        if engine == "edge":
+            raise TTSError(f"edge-tts сбой: {last_err}")
 
     # мок: тишина + эвристические тайминги (только тесты/оффлайн)
     words = _mock_durations(text)
